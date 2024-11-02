@@ -1,7 +1,10 @@
-# ---
-课程项目
+# 软工导论知识图谱的应用
+软工导论课程项目，前端使用vue2 + elemnetui进行开发，后端采用Java(Maven进行项目管理), 数据库使用neo4j
 
+## 前端
+前端对应的文档在front/application目录下的README中
 
+## 后端
 
 ### Neo4jTest
 
