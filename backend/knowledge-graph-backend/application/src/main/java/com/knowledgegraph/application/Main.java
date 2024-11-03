@@ -5,7 +5,7 @@ public class Main {
         // 替换为你的数据库 URI、用户名和密码
         String uri = "bolt://localhost:7687";
         String user = "neo4j";
-        String password = "zstp123456";
+        String password = "668931hwh";
 
         ConnectDataBase neo4jTest = new ConnectDataBase(uri, user, password);
 
