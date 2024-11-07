@@ -1,4 +1,4 @@
-# knowledge-graph-web
+# knowledge_graph
 
 ## Project setup
 ```

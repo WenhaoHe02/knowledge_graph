@@ -22,5 +22,8 @@ neo4j start
 ~~~
 jdk = 17.0.8
 Neo4j = 5.24.2 (社区版)
+node.js 17.0.1
+npm 8.1.0
+镜像站配置: npm config set registry https://registry.npmmirror.com
 ~~~
 
