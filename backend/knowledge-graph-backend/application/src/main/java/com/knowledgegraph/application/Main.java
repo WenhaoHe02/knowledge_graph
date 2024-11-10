@@ -1,21 +1,38 @@
 package com.knowledgegraph.application;
 
+import com.knowledgegraph.application.util.Neo4jUtil;
+import com.sun.net.httpserver.HttpServer;
+import com.knowledgegraph.application.controller.KnowledgeController;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 public class Main {
     public static void main(String[] args) {
-        // 替换为你的数据库 URI、用户名和密码
         String uri = "bolt://localhost:7687";
         String user = "neo4j";
         String password = "668931hwh";
 
-        ConnectDataBase neo4jTest = new ConnectDataBase(uri, user, password);
+        Neo4jUtil.init(uri, user, password);
+        System.out.println("Neo4j 数据库连接已初始化");
 
-        // 创建节点
-        neo4jTest.createNode();
+        try {
+            HttpServer server = HttpServer.create(new InetSocketAddress(8082), 0);
+            KnowledgeController.registerEndpoints(server);
+            server.setExecutor(null); // 使用默认的线程池
+            server.start();
+            System.out.println("HTTP 服务器已启动，监听端口 8082");
+        } catch (IOException e) {
+            e.printStackTrace();
+            Neo4jUtil.close();
+            System.out.println("HTTP 服务器启动失败");
+            return;
+        }
 
-        // 查询节点
-        neo4jTest.searchNodes();
-
-        // 关闭连接
-        neo4jTest.close();
+        // 添加关闭钩子以在程序结束时关闭 Neo4j 驱动
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Neo4jUtil.close();
+            System.out.println("Neo4j 数据库连接已关闭");
+        }));
     }
 }
