@@ -3,7 +3,7 @@ package com.knowledgegraph.application.model;
 public class KnowledgePoint {
     private String id;
     private String name;
-    private String introduction;
+    private String content;
 
     // Getters and setters
     public String getId() { return id; }
@@ -12,6 +12,6 @@ public class KnowledgePoint {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public String getIntroduction() { return introduction; }
-    public void setIntroduction(String introduction) { this.introduction = introduction; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
 }

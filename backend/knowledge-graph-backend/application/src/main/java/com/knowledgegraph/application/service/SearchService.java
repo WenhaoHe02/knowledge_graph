@@ -3,6 +3,6 @@ package com.knowledgegraph.application.service;
 import com.knowledgegraph.application.model.KnowledgePoint;
 import java.util.List;
 
-public interface KnowledgeService {
+public interface SearchService {
     List<KnowledgePoint> searchKnowledgePoints(String keyword);
 }
