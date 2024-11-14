@@ -27,7 +27,7 @@ public class KnowledgeStructureGenerator {
         // private constructor to prevent instantiation
     }
 
-    private static final Dotenv dotenv = Dotenv.configure().directory("./data-processing").load();
+    private static final Dotenv dotenv = Dotenv.configure().directory("./data-processing/").load();
     private static final String API_SECRET_KEY = dotenv.get("LLM_API_SECRET_KEY");//.env文件中
 
     private static String json_example =
