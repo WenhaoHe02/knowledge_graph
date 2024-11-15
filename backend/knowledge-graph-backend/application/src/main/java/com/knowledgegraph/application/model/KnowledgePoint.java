@@ -4,7 +4,14 @@ public class KnowledgePoint {
     private String id;
     private String name;
     private String content;
+    public KnowledgePoint(){
 
+    }
+    public KnowledgePoint(String id, String name, String content) {
+        this.id = id;
+        this.name = name;
+        this.content = content;
+    }
     // Getters and setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
