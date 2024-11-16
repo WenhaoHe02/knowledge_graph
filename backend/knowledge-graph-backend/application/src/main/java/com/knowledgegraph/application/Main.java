@@ -4,6 +4,7 @@ import com.knowledgegraph.application.controller.DetailController;
 import com.knowledgegraph.application.util.Neo4jUtil;
 import com.sun.net.httpserver.HttpServer;
 import com.knowledgegraph.application.controller.SearchController;
+import com.knowledgegraph.application.controller.ExerciseController;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -20,6 +21,7 @@ public class Main {
             HttpServer server = HttpServer.create(new InetSocketAddress(8083), 0);
             SearchController.registerEndpoints(server);
             DetailController.registerEndpoints(server);
+            ExerciseController.registerEndpoints(server); // 注册 Exercise 接口
             server.setExecutor(null); // 使用默认的线程池
             server.start();
             System.out.println("HTTP 服务器已启动，监听端口 8083");
