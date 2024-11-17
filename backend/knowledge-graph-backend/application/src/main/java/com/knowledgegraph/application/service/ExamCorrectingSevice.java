@@ -122,7 +122,7 @@ public class ExamCorrectingSevice {
 
     private static String getResponse(String text) {
         List<ChatMessage> messages = new ArrayList<>();
-        messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), "你现在扮演信息抽取的角色，要求根据用户输入和AI的回答，正确提取出信息。"));
+        messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), "你现在扮演试卷批改的角色，要求根据用户输入和AI的回答，正确提取出信息。"));
         messages.add(new ChatMessage(ChatMessageRole.USER.value(), text));
         messages.add(new ChatMessage(ChatMessageRole.USER.value(), __retriever_prompt));
         String res=new String();
@@ -151,11 +151,10 @@ public class ExamCorrectingSevice {
                         {
                             if (accumulator.getDelta() != null && accumulator.getDelta().getContent() != null) {
                                 responseBuilder.append(accumulator.getDelta().getContent());
-                                System.out.print(accumulator.getDelta().getContent());
+                                //System.out.print(accumulator.getDelta().getContent());
                             }
                         }
                     })
-                    .doOnComplete(System.out::println)
                     .lastElement()
                     .blockingGet();
             res = extractTextBetweenBackticks(responseBuilder.toString());

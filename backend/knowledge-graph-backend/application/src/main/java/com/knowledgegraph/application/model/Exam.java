@@ -41,4 +41,19 @@ public class Exam {
         return ans;
     }
 
+    public void print() {
+        System.out.println("考试ID: " + examId);
+        System.out.println("考试名称: " + examName);
+        System.out.println("试题与答案:");
+
+        // Iterate through the answers and print each question and answer
+        for (Map.Entry<String, String> entry : answers.entrySet()) {
+            String question = entry.getKey();
+            String answer = entry.getValue();
+            System.out.println("问题: " + question);
+            System.out.println("答案: " + answer);
+            System.out.println();
+        }
+    }
+
 }
