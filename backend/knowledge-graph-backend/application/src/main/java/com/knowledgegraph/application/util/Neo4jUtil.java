@@ -26,4 +26,8 @@ public class Neo4jUtil {
     public static void close() {
         driver.close();
     }
+
+    public static Driver getDriver() {
+        return driver;
+    }
 }
