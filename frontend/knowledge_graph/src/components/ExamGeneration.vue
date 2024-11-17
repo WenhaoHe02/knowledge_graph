@@ -35,18 +35,17 @@
       :page-size="pageSize" :total="totalRecords" @current-change="handlePageChange" class="page-container">
     </el-pagination>
 
-    <!-- Preview Dialog -->
     <el-dialog :visible.sync="previewDialogVisible" title="试卷预览" width="50%">
       <div class="preview-content">
-        <h4>试卷内容</h4>
-        <el-table :data="paginatedTableData" border>
-          <el-table-column prop="knowledgePoint" label="知识点列表"></el-table-column>
-          <el-table-column prop="isIncluded" label="是否包含">
-            <template slot-scope="scope">
-              <el-checkbox v-model="scope.row.isIncluded.isSelected" label="包含" disabled></el-checkbox>
-            </template>
-          </el-table-column>
+        <h4>{{ exam ? exam.examTitle : '试卷内容' }}</h4>
+        <p v-if="exam">试卷 ID: {{ exam.examId }}</p>
+
+        <el-table v-if="exam && exam.quesList" :data="exam.quesList" border>
+          <el-table-column prop="id" label="题目 ID"></el-table-column>
+          <el-table-column prop="content" label="题目内容"></el-table-column>
+          <el-table-column prop="answer" label="答案"></el-table-column>
         </el-table>
+        <p v-else>暂无试卷内容可预览</p>
       </div>
 
       <div slot="footer" class="dialog-footer">
@@ -54,6 +53,7 @@
         <el-button type="primary" @click="generateExam">确定生成</el-button>
       </div>
     </el-dialog>
+
 
     <!-- View Records Dialog -->
     <el-dialog :visible.sync="recordsDialogVisible" title="查看生成记录" width="50%">
@@ -101,8 +101,9 @@ export default {
       pageSize: 7,
       totalRecords: 0,
       tableData: [],
-      previewDialogVisible: false,  // 控制预览对话框的显示与隐藏
-      recordsDialogVisible: false,  // 控制生成记录对话框的显示与隐藏
+      exam: null,
+      previewDialogVisible: false,
+      recordsDialogVisible: false,
       generationRecords: [         // 记录生成的操作
         { time: '2024-11-15 12:30', action: '生成试卷' },
         { time: '2024-11-15 13:00', action: '生成试卷' },
@@ -139,15 +140,47 @@ export default {
       }
 
     },
-    // Open the preview dialog
-    openPreviewDialog() {
+
+    async openPreviewDialog() {
       this.previewDialogVisible = true;
+      const baseUrl = "http://localhost:8083";
+      try {
+        const selectedIds = this.tableData
+          .filter(item => item.isIncluded.isSelected)
+          .map(item => item.id);
+        const response = await axios.post(`${baseUrl}/api/exam/generate`, {
+          selectedIds
+        });
+
+        if (response.data.success) {
+          this.exam = {
+            examTitle: response.data.examTitle,
+            examId: response.data.examId,
+            quesList: response.data.quesList
+          }
+          this.$message({
+            type: "success",
+            message: "成功发送数据"
+          });
+        } else {
+          this.$message({
+            type: "warning",
+            message: "发送数据失败"
+          });
+        }
+      } catch (error) {
+        this.$message({
+          type: "error",
+          message: "请求数据出错"
+        })
+      }
+
     },
-    // Open the records dialog
+
     openRecordDialog() {
       this.recordsDialogVisible = true;
     },
-    // View the details of a record
+
     viewRecordDetails(record) {
       alert(`查看记录: ${record.time} - ${record.action}`);
     },
@@ -155,10 +188,6 @@ export default {
     deleteRecord(record) {
       this.generationRecords = this.generationRecords.filter(item => item !== record);
       console.log(`删除记录: ${record.time} - ${record.action}`);
-    },
-    // Confirm selection (toggle)
-    confirmSelection() {
-      console.log("确认选择");
     },
     select() {
       this.updateSelectAllStatus();
@@ -168,23 +197,48 @@ export default {
         row.isIncluded.isSelected = this.selectAll;
       });
     },
-    // Update selectAll checkbox based on the current selection
+
     updateSelectAllStatus() {
       this.selectAll = this.tableData.every(row => row.isIncluded.isSelected);
     },
-    // Handle the page change
+
     handlePageChange(page) {
       this.currentPage = page;
     },
-    // View generated records (open dialog)
     viewRecords() {
       console.log("查看生成记录");
-      this.recordsDialogVisible = true;  // Open the dialog to show records
+      this.recordsDialogVisible = true;
     },
-    // Handle the exam generation
-    generateExam() {
-      console.log("生成试卷");
-      this.previewDialogVisible = false;  // Close the preview dialog
+    async generateExam() {
+      try {
+        const baseUrl = "http://localhost:8083";
+        const response = await axios.get(`${baseUrl}/api/exam/save`, {
+          params: {
+            id: 'this.exam.examId',
+          },
+        });
+        if (response.data.success) {
+          this.$message({
+            type: 'success',
+            message: '生成试卷成功'
+          });
+          console.log(this.tableData);
+        } else {
+          this.$message({
+            type: 'warning',
+            message: '生成试卷失败'
+          });
+          return;
+        }
+      } catch (error) {
+        this.$message({
+          type: 'error',
+          message: '生成试卷时出错'
+        });
+        return;
+      }
+      this.previewDialogVisible = false;
+      this.$router.push({ name: 'exam-page', params: { examId: this.exam.examId } });
     },
   },
   async created() {
@@ -192,7 +246,6 @@ export default {
     this.totalRecords = this.tableData.length;
   },
   computed: {
-    // Paginated table data based on current page
     paginatedTableData() {
       const start = (this.currentPage - 1) * this.pageSize;
       const end = start + this.pageSize;
@@ -200,7 +253,6 @@ export default {
     },
   },
   watch: {
-    // Watch for changes to selectAll to update table row selections
     selectAll() {
       this.toggleSelectAll();
     },
