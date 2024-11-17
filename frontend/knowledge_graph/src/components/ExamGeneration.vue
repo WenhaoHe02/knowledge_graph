@@ -221,8 +221,7 @@ h3 {
 }
 
 .page-container {
-  justify-content: center;
-  margin-bottom: 40px;
+  margin-top: 40px;
 }
 
 .table-container {
