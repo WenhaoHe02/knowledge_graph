@@ -1,6 +1,7 @@
 package com.knowledgegraph.application;
 
 import com.knowledgegraph.application.controller.DetailController;
+import com.knowledgegraph.application.controller.QAController;
 import com.knowledgegraph.application.util.Neo4jUtil;
 import com.sun.net.httpserver.HttpServer;
 import com.knowledgegraph.application.controller.SearchController;
@@ -21,6 +22,7 @@ public class Main {
             HttpServer server = HttpServer.create(new InetSocketAddress(8083), 0);
             SearchController.registerEndpoints(server);
             DetailController.registerEndpoints(server);
+            QAController.registerEndpoints(server);
             ExerciseController.registerEndpoints(server); // 注册 Exercise 接口
             server.setExecutor(null); // 使用默认的线程池
             server.start();
