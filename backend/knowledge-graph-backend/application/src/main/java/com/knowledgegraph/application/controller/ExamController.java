@@ -24,6 +24,8 @@ public class ExamController {
         server.createContext("/api/exam/generate", new GenerateExamHandler());
         // 注册保存试卷的接口
         server.createContext("/api/exam/save", new SaveExamHandler());
+        // 注册获取试卷的接口
+        server.createContext("/api/exam/getExam", new GetExamHandler());
     }
 
     // 生成试卷接口的处理器
@@ -81,6 +83,36 @@ public class ExamController {
                     }
                 } else {
                     exchange.sendResponseHeaders(400, -1); // 请求错误
+                }
+            } else {
+                exchange.sendResponseHeaders(405, -1); // 方法不允许
+            }
+        }
+    }
+
+    //获取试卷接口的处理器
+    static class GetExamHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+
+            if ("GET".equals(exchange.getRequestMethod())) {
+                String query = exchange.getRequestURI().getQuery();
+                String examId = null;
+
+                // 解析参数
+                if (query != null && query.startsWith("examId=")) {
+                    examId = query.split("=")[1];
+                }
+
+                // 调用服务获取试卷
+                JSONArray responseJson = examService.getExam(examId);
+
+                String response = responseJson.toString();
+                exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes(StandardCharsets.UTF_8));
                 }
             } else {
                 exchange.sendResponseHeaders(405, -1); // 方法不允许

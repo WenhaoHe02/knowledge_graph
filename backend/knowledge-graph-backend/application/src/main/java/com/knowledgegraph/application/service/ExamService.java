@@ -19,4 +19,12 @@ public interface ExamService {
      * @return 保存结果
      */
     JSONObject saveExam(String examId);
+
+    /**
+     * 根据试卷 ID 获取试卷内容
+     *
+     * @param examId 试卷 ID，如果为空返回全部试卷
+     * @return 试卷内容
+     */
+    JSONArray getExam(String examId);
 }

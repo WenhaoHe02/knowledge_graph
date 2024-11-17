@@ -120,4 +120,73 @@ public class ExamServiceImpl implements ExamService {
             System.out.println("试卷写入数据库失败: " + e.getMessage());
         }
     }
+
+    @Override
+    public JSONArray getExam(String examId) {
+        JSONArray examsArray = new JSONArray();
+
+        try (Session session = driver.session()) {
+            String query;
+
+            // 根据是否传入 examId 构建查询
+            if (examId != null && !examId.isEmpty()) {
+                query = "MATCH (exam:试卷 {id: $examId}) RETURN exam.id AS id, exam.title AS title, exam.quesList AS quesList";
+                Result result = session.run(query, org.neo4j.driver.Values.parameters("examId", examId));
+
+                if (result.hasNext()) {
+                    Record record = result.next();
+                    examsArray.put(buildExamJson(record));
+                }
+            } else {
+                query = "MATCH (exam:试卷) RETURN exam.id AS id, exam.title AS title, exam.quesList AS quesList";
+                Result result = session.run(query);
+
+                while (result.hasNext()) {
+                    Record record = result.next();
+                    examsArray.put(buildExamJson(record));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return examsArray;
+    }
+
+    /**
+     * 构建试卷的 JSON 格式
+     *
+     * @param record 数据库查询结果记录
+     * @return 试卷 JSON 对象
+     */
+    private JSONObject buildExamJson(Record record) {
+        JSONObject examJson = new JSONObject();
+
+        // 处理 ID 和 Title 属性
+        String examId = record.get("id").type().name().equals("INTEGER") ?
+                String.valueOf(record.get("id").asInt()) :
+                record.get("id").asString();
+
+        String examTitle = record.get("title").type().name().equals("INTEGER") ?
+                String.valueOf(record.get("title").asInt()) :
+                record.get("title").asString();
+
+        // 处理 quesList 属性
+        JSONArray quesListArray;
+        try {
+            quesListArray = new JSONArray(record.get("quesList").asString());
+        } catch (Exception e) {
+            // 如果解析失败，返回空数组
+            quesListArray = new JSONArray();
+        }
+
+        // 构建 JSON 对象
+        examJson.put("examId", examId);
+        examJson.put("examTitle", examTitle);
+        examJson.put("quesList", quesListArray); // 将 JSON 数组直接放入响应
+        examJson.put("success", "true");
+        examJson.put("code", "200");
+
+        return examJson;
+    }
 }
