@@ -27,4 +27,12 @@ public interface ExamService {
      * @return 试卷内容
      */
     JSONArray getExam(String examId);
+    /**
+     * 提交试卷
+     *
+     * @param examId 试卷的唯一标识符
+     * @param answers 用户提交的答案列表
+     * @return 提交是否成功
+     */
+    boolean submitExam(String examId, JSONArray answers);
 }

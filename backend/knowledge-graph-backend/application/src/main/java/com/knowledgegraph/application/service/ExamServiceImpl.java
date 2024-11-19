@@ -207,4 +207,31 @@ public class ExamServiceImpl implements ExamService {
 
         return examJson;
     }
+
+    @Override
+    public boolean submitExam(String examId, JSONArray answers) {
+        try (Session session = driver.session()) {
+            // 创建用户作答节点
+            String userAnswerId = UUID.randomUUID().toString();
+            String createUserAnswerQuery = "CREATE (ua:用户作答 {id: $userAnswerId, answers: $answers})";
+            session.run(createUserAnswerQuery, org.neo4j.driver.Values.parameters(
+                    "userAnswerId", userAnswerId,
+                    "answers", answers.toString() // 转换为 JSON 字符串存储
+            ));
+
+            // 创建用户作答节点与试卷节点的关系
+            String createRelationQuery = "MATCH (ua:用户作答 {id: $userAnswerId}), (exam:试卷 {id: $examId}) " +
+                    "CREATE (ua)-[:answer_relation]->(exam)";
+            session.run(createRelationQuery, org.neo4j.driver.Values.parameters(
+                    "userAnswerId", userAnswerId,
+                    "examId", examId
+            ));
+
+            System.out.println("用户作答已提交: 用户作答节点 ID = " + userAnswerId);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
