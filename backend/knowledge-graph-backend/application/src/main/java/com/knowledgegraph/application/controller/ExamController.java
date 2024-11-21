@@ -32,15 +32,30 @@ public class ExamController {
     static class GenerateExamHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            String method = exchange.getRequestMethod();
+            System.out.println("收到的请求方法: " + method);
 
-            if ("POST".equals(exchange.getRequestMethod())) {
+            // 添加 CORS 头
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "POST");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+
+
+
+            // 处理 OPTIONS 请求
+            if ("OPTIONS".equalsIgnoreCase(method)) {
+                System.out.println("处理 OPTIONS 请求");
+                exchange.sendResponseHeaders(200, -1); // 返回 200 状态码，无响应体
+                return;
+            }
+
+            if ("POST".equalsIgnoreCase(method)) {
                 try (InputStream is = exchange.getRequestBody()) {
                     byte[] body = is.readAllBytes();
                     String requestBody = new String(body, StandardCharsets.UTF_8);
                     System.out.println("收到的生成试卷请求: " + requestBody);
 
+                    // 确认解析的数据格式正确
                     JSONArray knowledgeIds = new JSONArray(requestBody);
                     JSONObject responseJson = examService.generateExam(knowledgeIds);
 
@@ -55,10 +70,12 @@ public class ExamController {
                     exchange.sendResponseHeaders(500, -1);
                 }
             } else {
+                System.out.println("405 错误: 方法 " + method + " 不被允许");
                 exchange.sendResponseHeaders(405, -1); // 方法不允许
             }
         }
     }
+
 
     // 保存试卷接口的处理器
     static class SaveExamHandler implements HttpHandler {
@@ -66,6 +83,7 @@ public class ExamController {
         public void handle(HttpExchange exchange) throws IOException {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
 
             if ("GET".equals(exchange.getRequestMethod())) {
                 String query = exchange.getRequestURI().getQuery();

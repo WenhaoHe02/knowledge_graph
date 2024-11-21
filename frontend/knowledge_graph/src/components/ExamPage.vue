@@ -32,13 +32,11 @@ import axios from 'axios';
 
 export default {
   props: {
-    examId: {
-      type: String,
-      required: true
-    }
+
   },
   data() {
     return {
+      examId: "",
       examName: "",               // 用于存储试卷名称
       choiceQuestions: [],         // 存储选择题数据
       fillInTheBlankQuestions: [], // 存储填空题数据
@@ -49,21 +47,22 @@ export default {
     };
   },
   created() {
+    this.examId = this.$route.params.examId;
     this.fetchExamData();
   },
   methods: {
     // 获取试卷数据
     fetchExamData() {
       axios.get(`/api/exam/${this.examId}`)
-          .then(response => {
-            const data = response.data;
-            this.examName = data.examName; // 设置试卷名称
-            this.choiceQuestions = data.choiceQuestions;
-            this.fillInTheBlankQuestions = data.fillInTheBlankQuestions;
-          })
-          .catch(error => {
-            console.error("Failed to fetch exam data:", error);
-          });
+        .then(response => {
+          const data = response.data;
+          this.examName = data.examName; // 设置试卷名称
+          this.choiceQuestions = data.choiceQuestions;
+          this.fillInTheBlankQuestions = data.fillInTheBlankQuestions;
+        })
+        .catch(error => {
+          console.error("Failed to fetch exam data:", error);
+        });
     },
 
     // 提交试卷答案
@@ -74,13 +73,13 @@ export default {
       };
 
       axios.post(`/api/exam/submit`, payload)
-          .then(() => {
-            this.$message.success("提交成功！等待批改结果。");
-          })
-          .catch(error => {
-            this.$message.error("提交失败，请重试！");
-            console.error("Failed to submit answers:", error);
-          });
+        .then(() => {
+          this.$message.success("提交成功！等待批改结果。");
+        })
+        .catch(error => {
+          this.$message.error("提交失败，请重试！");
+          console.error("Failed to submit answers:", error);
+        });
     }
   }
 };
@@ -96,6 +95,7 @@ export default {
 .submit-button-container {
   display: flex;
   justify-content: center;
-  margin-top: 30px; /* 将按钮下移 */
+  margin-top: 30px;
+  /* 将按钮下移 */
 }
 </style>

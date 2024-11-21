@@ -40,10 +40,8 @@
         <h4>{{ exam ? exam.examTitle : '试卷内容' }}</h4>
         <p v-if="exam">试卷 ID: {{ exam.examId }}</p>
 
-        <el-table v-if="exam && exam.quesList" :data="exam.quesList" border>
-          <el-table-column prop="id" label="题目 ID"></el-table-column>
-          <el-table-column prop="content" label="题目内容"></el-table-column>
-          <el-table-column prop="answer" label="答案"></el-table-column>
+        <el-table v-if="exam && exam.quesList && exam.quesList.length > 0" :data="exam.quesList" border>
+          <el-table-column prop="titleContent" label="题目内容"></el-table-column>
         </el-table>
         <p v-else>暂无试卷内容可预览</p>
       </div>
@@ -55,7 +53,6 @@
     </el-dialog>
 
 
-    <!-- View Records Dialog -->
     <el-dialog :visible.sync="recordsDialogVisible" title="查看生成记录" width="50%">
       <div class="record-content">
         <h4>生成记录</h4>
@@ -144,13 +141,18 @@ export default {
     async openPreviewDialog() {
       this.previewDialogVisible = true;
       const baseUrl = "http://localhost:8083";
+      // const baseUrl = "http://127.0.0.1:4523/m1/5419934-5094163-default/api/exam/generate";
       try {
         const selectedIds = this.tableData
           .filter(item => item.isIncluded.isSelected)
           .map(item => item.id);
-        const response = await axios.post(`${baseUrl}/api/exam/generate`, {
-          selectedIds
-        });
+        const response = await axios.post(`${baseUrl}/api/exam/generate`, JSON.stringify(selectedIds),
+          {
+            headers: {
+              'Content-Type': 'application/json; charset=UTF-8'
+            }
+          }
+        );
 
         if (response.data.success) {
           this.exam = {
@@ -162,6 +164,7 @@ export default {
             type: "success",
             message: "成功发送数据"
           });
+          console.log(this.exam);
         } else {
           this.$message({
             type: "warning",
