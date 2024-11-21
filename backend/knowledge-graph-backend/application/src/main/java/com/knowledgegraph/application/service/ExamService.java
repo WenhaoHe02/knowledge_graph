@@ -35,4 +35,11 @@ public interface ExamService {
      * @return 提交是否成功
      */
     boolean submitExam(String examId, JSONArray answers);
+    /**
+     * 删除试卷
+     *
+     * @param examId 试卷的唯一标识符
+     * @return 提交是否成功
+     */
+    boolean deleteExam(String examId);
 }

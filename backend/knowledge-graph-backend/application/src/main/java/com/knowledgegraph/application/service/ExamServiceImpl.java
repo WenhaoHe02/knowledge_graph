@@ -234,4 +234,20 @@ public class ExamServiceImpl implements ExamService {
             return false;
         }
     }
+    @Override
+    public boolean deleteExam(String examId) {
+        try (Session session = driver.session()) {
+            // 删除试卷节点
+            String query = "MATCH (exam:试卷 {id: $examId}) DETACH DELETE exam RETURN COUNT(exam) AS count";
+            Result result = session.run(query, org.neo4j.driver.Values.parameters("examId", examId));
+
+            if (result.hasNext()) {
+                int count = result.next().get("count").asInt();
+                return count > 0; // 如果删除了至少一个节点，返回 true
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false; // 如果发生异常或未删除任何节点，返回 false
+    }
 }

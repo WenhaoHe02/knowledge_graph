@@ -16,8 +16,20 @@
           <el-table-column prop="examTitle" label="试卷名称"></el-table-column>
           <el-table-column label="操作">
             <template #default="scope">
-              <el-button type="primary" @click="goToExam(scope.row.examId, scope.row.examTitle)">
+              <!-- 开始答题按钮 -->
+              <el-button
+                type="primary"
+                @click="goToExam(scope.row.examId, scope.row.examTitle)"
+              >
                 开始答题
+              </el-button>
+              <!-- 删除按钮 -->
+              <el-button
+                type="danger"
+                @click="deleteExam(scope.row.examId)"
+                style="margin-left: 10px"
+              >
+                删除
               </el-button>
             </template>
           </el-table-column>
@@ -98,8 +110,33 @@ export default {
     goToHome() {
       this.$router.push("/");
     },
-    handlePageChange(page) {
-      this.currentPage = page;
+    // 删除试卷
+    async deleteExam(examId) {
+      try {
+        const baseUrl = "http://localhost:8083";
+        const response = await axios.delete(`${baseUrl}/api/exam/del`, {
+          data: { examId },
+        });
+        if (response.data.code === 200) {
+          this.$message({
+            type: "success",
+            message: "试卷删除成功",
+          });
+          // 刷新试卷列表
+          this.fetchExamList();
+        } else {
+          this.$message({
+            type: "warning",
+            message: "试卷删除失败，试卷可能不存在",
+          });
+        }
+      } catch (error) {
+        console.error("删除试卷失败:", error);
+        this.$message({
+          type: "error",
+          message: "删除试卷时出错",
+        });
+      }
     },
   },
   async created() {
