@@ -39,6 +39,7 @@ export default {
       searchQuery: '',
       results: [],
       allKnowledgePoints: [], // 存储所有的知识点
+      semester: '2024-1', // 默认学期或通过其他方式动态获取
     };
   },
   created() {
@@ -47,43 +48,56 @@ export default {
   methods: {
     // 获取所有的知识点
     async fetchAllKnowledgePoints() {
-    try {
+      try {
         const response = await this.$axios.get('http://localhost:8083/api/knowledge/search', {
-            headers: {
-                "x-api-token": this.$axios.defaults.headers["x-api-token"], // 添加 API token
-            },
-            params: {
-                semester: this.name
-            },
+          headers: {
+            "x-api-token": this.$axios.defaults.headers["x-api-token"], // 添加 API token
+          },
+          params: {
+            keyword:"'$'"
+          },
         });
+
         if (response.data.success) {
-            this.allKnowledgePoints = response.data.result; // 根据响应数据结构可能需要调整
-            this.$message({
-                type: 'success',
-                message: '知识点数据加载成功'
-            });
+          this.allKnowledgePoints = response.data.result.map(item => ({
+            ...item,
+            isIncluded: { isSelected: false } 
+          }));
+
+          // 加载成功后，初始化搜索结果
+          this.results = [...this.allKnowledgePoints];
+
+          this.$message({
+            type: 'success',
+            message: '知识点数据加载成功'
+          });
+
+          console.log(this.allKnowledgePoints); 
         } else {
-            this.$message({
-                type: 'warning',
-                message: '知识点数据加载失败'
-            });
+          this.$message({
+            type: 'warning',
+            message: '知识点数据加载失败'
+          });
         }
-    } catch (error) {
-        console.error('Failed to fetch knowledge points:', error);
+      } catch (error) {
+        console.error('加载知识点数据时出错:', error);
         this.$message({
-            type: 'error',
-            message: '加载知识点数据时出错'
+          type: 'error',
+          message: '加载知识点数据时出错'
         });
-    }
-}
-,
-        onSearch() {
+      }
+    },
+
+    // 搜索功能
+    onSearch() {
       if (this.searchQuery) {
+        // 执行搜索，过滤出符合条件的知识点
         this.results = this.allKnowledgePoints.filter(item =>
           item.name.toLowerCase().includes(this.searchQuery.toLowerCase())
         );
       } else {
-        this.results = [];
+        // 如果没有搜索条件，显示所有数据
+        this.results = [...this.allKnowledgePoints];
       }
     },
 

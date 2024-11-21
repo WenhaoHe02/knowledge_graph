@@ -44,4 +44,22 @@ public class ExerciseRepository {
 
         return quesLists;
     }
+
+    public String findKnowledgePointNameById(String knowledgeId) {
+        String knowledgeName = null;
+
+        try (Session session = Neo4jUtil.getDriver().session()) {
+            String query = "MATCH (kp:知识点 {id: $id}) RETURN kp.name AS name";
+            Result result = session.run(query, org.neo4j.driver.Values.parameters("id", knowledgeId));
+
+            if (result.hasNext()) {
+                Record record = result.next();
+                knowledgeName = record.get("name").asString();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return knowledgeName;
+    }
 }

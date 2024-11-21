@@ -26,8 +26,21 @@ public class ExamServiceImpl implements ExamService {
         Set<String> usedQuestionIds = new HashSet<>();
         JSONArray quesListArray = new JSONArray();
 
+        // 拼接知识点名称部分
+        StringBuilder titleBuilder = new StringBuilder();
         for (int i = 0; i < knowledgeIds.length(); i++) {
             String knowledgeId = knowledgeIds.getString(i);
+
+            // 查询知识点名称
+            String knowledgeName = exerciseRepository.findKnowledgePointNameById(knowledgeId);
+
+            // 将知识点名称添加到标题
+            titleBuilder.append(knowledgeName != null ? knowledgeName : knowledgeId); // 如果名称为空则使用 ID
+            if (i < knowledgeIds.length() - 1) {
+                titleBuilder.append(", "); // 逗号分隔
+            }
+
+            // 查询相关习题
             List<QuesList> quesList = exerciseRepository.findExercisesByKnowledgePointId(knowledgeId);
 
             for (QuesList ques : quesList) {
@@ -44,9 +57,14 @@ public class ExamServiceImpl implements ExamService {
             }
         }
 
-        String examId = UUID.randomUUID().toString();
-        String examTitle = "自动生成的试卷";
+        // 获取当前时间并格式化为 "yyyy-MM-dd HH:mm:ss"
+        String timestamp = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
+        // 构建试卷标题
+        String examTitle = titleBuilder.append(" - ").append(timestamp).toString();
+
+        String examId = UUID.randomUUID().toString();
         writeExamToDatabase(examId, examTitle, quesListArray);
 
         JSONObject responseJson = new JSONObject();
@@ -188,5 +206,32 @@ public class ExamServiceImpl implements ExamService {
         examJson.put("code", "200");
 
         return examJson;
+    }
+
+    @Override
+    public boolean submitExam(String examId, JSONArray answers) {
+        try (Session session = driver.session()) {
+            // 创建用户作答节点
+            String userAnswerId = UUID.randomUUID().toString();
+            String createUserAnswerQuery = "CREATE (ua:用户作答 {id: $userAnswerId, answers: $answers})";
+            session.run(createUserAnswerQuery, org.neo4j.driver.Values.parameters(
+                    "userAnswerId", userAnswerId,
+                    "answers", answers.toString() // 转换为 JSON 字符串存储
+            ));
+
+            // 创建用户作答节点与试卷节点的关系
+            String createRelationQuery = "MATCH (ua:用户作答 {id: $userAnswerId}), (exam:试卷 {id: $examId}) " +
+                    "CREATE (ua)-[:answer_relation]->(exam)";
+            session.run(createRelationQuery, org.neo4j.driver.Values.parameters(
+                    "userAnswerId", userAnswerId,
+                    "examId", examId
+            ));
+
+            System.out.println("用户作答已提交: 用户作答节点 ID = " + userAnswerId);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }
