@@ -18,6 +18,11 @@ public class GradingResult {
 
     Map<String, Integer> scores; // 每题得分
     Map<String, String> feedback; // 每题反馈
+
+    public void setTotalScore(int totalScore) {
+        this.totalScore = totalScore;
+    }
+
     int totalScore; // 总分
 
     // 构造函数
