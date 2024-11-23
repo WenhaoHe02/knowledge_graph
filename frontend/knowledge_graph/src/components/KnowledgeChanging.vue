@@ -4,6 +4,21 @@
             <el-col :span="24">
                 <el-form class="custom-popper" label-width="120px">
                     <el-row>
+                        <!-- 搜索知识点 -->
+                        <el-col :span="16">
+                            <el-form-item label="搜索知识点 ID" required>
+                                <el-input v-model="searchId" placeholder="请输入知识点 ID" style="width: 100%"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="16">
+                            <el-form-item>
+                                <el-button type="primary" @click="loadKnowledgePoint">搜索知识点</el-button>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+                    <el-divider></el-divider>
+                    <!-- 修改知识点部分 -->
+                    <el-row>
                         <!-- 知识点名称 -->
                         <el-col :span="16">
                             <el-form-item label="知识点名称" required>
@@ -15,7 +30,7 @@
                         <!-- ID 编号 -->
                         <el-col :span="16">
                             <el-form-item label="ID 编号" required>
-                                <el-input v-model="knowledgePoint.id" placeholder="请输入 ID 编号"
+                                <el-input v-model="knowledgePoint.id" placeholder="请输入 ID 编号" readonly
                                     style="width: 100%"></el-input>
                             </el-form-item>
                         </el-col>
@@ -72,7 +87,7 @@
                     <el-row>
                         <el-col :span="16">
                             <el-form-item>
-                                <el-button type="primary" @click="handleSubmit">提交</el-button>
+                                <el-button type="primary" @click="handleSubmit">保存修改</el-button>
                                 <el-button @click="handleReset">重置</el-button>
                             </el-form-item>
                         </el-col>
@@ -82,9 +97,8 @@
         </el-row>
     </div>
 </template>
-
 <script>
-import { Input, Button, Row, Col, Form, FormItem } from 'element-ui';
+import { Input, Button, Row, Col, Form, FormItem, Divider } from 'element-ui';
 import axios from 'axios';
 
 export default {
@@ -95,10 +109,12 @@ export default {
         "el-col": Col,
         "el-form": Form,
         "el-form-item": FormItem,
+        "el-divider": Divider,
     },
     data() {
         return {
             isLoading: false,
+            searchId: null, // 搜索时输入的知识点 ID
             knowledgePoint: {
                 name: null,
                 id: null,
@@ -112,8 +128,48 @@ export default {
         };
     },
     methods: {
+        // 加载知识点数据
+        async loadKnowledgePoint() {
+            if (!this.searchId) {
+                this.$message.error('请输入知识点 ID 以进行搜索！');
+                return;
+            }
+
+            try {
+                this.isLoading = true;
+                const baseUrl = "http://localhost:8083";
+                const id = `"${this.searchId || ""}"`;
+                const response = await axios.get(`${baseUrl}/api/knowledge/detail`, {
+                    params: { id: id },
+                });
+
+                const data = response.data;
+                if (data.success && data.result) {
+                    const kp = data.result;
+                    this.knowledgePoint = {
+                        name: kp.name,
+                        id: kp.id,
+                        prePointString: kp.prePoint.join(","),
+                        postPointString: kp.postPoint.join(","),
+                        content: kp.content,
+                        cognition: kp.cognition,
+                        tag: kp.tag,
+                        note: kp.note,
+                    };
+                    this.$message.success('知识点加载成功！');
+                } else {
+                    this.$message.error('未找到对应的知识点！');
+                }
+            } catch (error) {
+                console.error('加载失败:', error);
+                this.$message.error('加载失败，请检查网络或稍后重试！');
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        // 提交修改
         async handleSubmit() {
-            // 将输入的逗号分隔字符串转换为数组
             const dataToSubmit = {
                 ...this.knowledgePoint,
                 prePoint: this.knowledgePoint.prePointString
@@ -136,14 +192,16 @@ export default {
                     },
                 });
                 console.log('提交成功:', response.data);
-                this.$message.success('提交成功！');
+                this.$message.success('修改保存成功！');
             } catch (error) {
                 console.error('提交失败:', error);
-                this.$message.error('提交失败，请检查数据或稍后重试！');
+                this.$message.error('保存失败，请检查数据或稍后重试！');
             } finally {
                 this.isLoading = false;
             }
         },
+
+        // 重置表单
         handleReset() {
             this.knowledgePoint = {
                 name: null,
@@ -159,9 +217,3 @@ export default {
     },
 };
 </script>
-
-<style scoped>
-.custom-popper {
-    margin-top: 20px;
-}
-</style>

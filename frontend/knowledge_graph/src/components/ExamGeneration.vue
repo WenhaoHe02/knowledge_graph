@@ -27,7 +27,6 @@
     <!-- Action Buttons -->
     <div class="button-group">
       <el-button type="primary" @click="openPreviewDialog">预览试卷</el-button>
-      <el-button @click="openRecordDialog">查看生成记录</el-button>
     </div>
 
     <!-- Pagination -->
@@ -49,27 +48,6 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="previewDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="generateExam">确定生成</el-button>
-      </div>
-    </el-dialog>
-
-
-    <el-dialog :visible.sync="recordsDialogVisible" title="查看生成记录" width="50%">
-      <div class="record-content">
-        <h4>生成记录</h4>
-        <el-table :data="generationRecords" border>
-          <el-table-column prop="time" label="时间"></el-table-column>
-          <el-table-column prop="action" label="操作"></el-table-column>
-          <el-table-column label="操作" width="150">
-            <template slot-scope="scope">
-              <el-button @click="viewRecordDetails(scope.row)" size="mini">查看</el-button>
-              <el-button @click="deleteRecord(scope.row)" type="danger" size="mini">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="recordsDialogVisible = false">关闭</el-button>
       </div>
     </el-dialog>
   </div>
@@ -100,7 +78,6 @@ export default {
       tableData: [],
       exam: null,
       previewDialogVisible: false,
-      recordsDialogVisible: false,
       generationRecords: [         // 记录生成的操作
         { time: '2024-11-15 12:30', action: '生成试卷' },
         { time: '2024-11-15 13:00', action: '生成试卷' },
@@ -207,10 +184,6 @@ export default {
 
     handlePageChange(page) {
       this.currentPage = page;
-    },
-    viewRecords() {
-      console.log("查看生成记录");
-      this.recordsDialogVisible = true;
     },
     async generateExam() {
       try {

@@ -9,6 +9,8 @@ import ExamCorrection from '../components/ExamCorrection.vue';
 import QnA from '../components/QnA.vue';
 import ExamSelect from "../components/ExamSelect.vue";
 import ExamAnswer from "../components/ExamAnswer.vue";
+import KnowledgeAdding from '../components/KnowledgeAdding.vue';
+import KnowledgeChanging from '../components/KnowledgeChanging.vue';
 
 Vue.use(Router);
 
@@ -22,5 +24,7 @@ export default new Router({
     { path: '/qna', component: QnA },
     { path: '/exam-select', component: ExamSelect },
     { path: '/exam-answer', component: ExamAnswer },
+    { path: '/knowledge-adding', component: KnowledgeAdding },
+    { path: '/knowledge-changing', component: KnowledgeChanging },
   ],
 });

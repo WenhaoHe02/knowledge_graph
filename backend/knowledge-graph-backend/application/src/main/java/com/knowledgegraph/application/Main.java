@@ -31,6 +31,7 @@ public class Main {
             ExamCorrectingHttpController.registerEndpoints(server);
             QAController.registerEndpoints(server);
             ExamController.registerEndpoints(server);
+            ModifyController.registerEntryPoint(server);
             server.setExecutor(null); // 使用默认的线程池
             server.start();
             System.out.println("HTTP 服务器已启动，监听端口 8083");
