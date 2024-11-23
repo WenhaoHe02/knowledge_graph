@@ -13,6 +13,7 @@
         <el-menu-item index="/exam-correction">试卷批改</el-menu-item>
         <el-menu-item index="/exam-select">试卷答题</el-menu-item>
         <el-menu-item index="/qna">问答</el-menu-item>
+        <el-menu-item index="/exam-answer">试卷内容</el-menu-item>
       </el-menu>
     </el-main>
   </el-container>

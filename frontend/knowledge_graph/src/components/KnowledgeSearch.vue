@@ -1,14 +1,10 @@
 <template>
   <div class="knowledge-search">
     <h1>知识点搜索页面</h1>
-    
-    <el-input
-      v-model="searchQuery"
-      placeholder="请输入知识点关键词"
-      @input="onSearch"
-      style="width: 300px; margin-right: 10px;"
-    />
-    
+
+    <el-input v-model="searchQuery" placeholder="请输入知识点关键词" @input="onSearch"
+      style="width: 300px; margin-right: 10px;" />
+
     <el-button type="primary" @click="onSearch">搜索</el-button>
 
     <!-- 搜索结果展示 -->
@@ -51,12 +47,12 @@ export default {
       try {
         const response = await this.$axios.get('http://localhost:8083/api/knowledge/search', {
           params: {
-            keyword:"''"
+            keyword: "''"
           },
         });
 
         if (response.data.success) {
-          this.allKnowledgePoints = response.data.result.map(item => ({...item,isIncluded: { isSelected: false } }));
+          this.allKnowledgePoints = response.data.result.map(item => ({ ...item, isIncluded: { isSelected: false } }));
 
           // 加载成功后，初始化搜索结果
           this.results = [...this.allKnowledgePoints];
@@ -66,7 +62,7 @@ export default {
             message: '知识点数据加载成功'
           });
 
-          console.log(this.allKnowledgePoints); 
+          console.log(this.allKnowledgePoints);
         } else {
           this.$message({
             type: 'warning',
@@ -97,8 +93,8 @@ export default {
 
     // 跳转到知识点详情页面
     goToDetailPage(id) {
-  this.$router.push({ name: 'KnowledgeDetail', params: { id } });
-}
+      this.$router.push({ name: 'KnowledgeDetail', params: { id } });
+    }
   }
 };
 </script>

@@ -17,10 +17,7 @@
         </el-descriptions>
       </div>
       <div v-else>
-        <el-alert
-          title="无法加载知识点详情"
-          type="error"
-          show-icon>
+        <el-alert title="无法加载知识点详情" type="error" show-icon>
         </el-alert>
       </div>
     </el-card>
@@ -43,8 +40,10 @@ export default {
   methods: {
     // Fetch the detailed information for the knowledge point
     async fetchKnowledgeDetail() {
-      const knowledgeId = this.$route.params.id;
       try {
+        console.log(this.$route.params.id);
+        const knowledgeId = `"${this.$route.params.id || ""}"`;
+        console.log(knowledgeId)
         const response = await axios.get(`http://localhost:8083/api/knowledge/detail`, {
           params: { id: knowledgeId }
         });

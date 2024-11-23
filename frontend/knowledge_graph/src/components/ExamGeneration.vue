@@ -190,7 +190,7 @@ export default {
         const baseUrl = "http://localhost:8083";
         const response = await axios.get(`${baseUrl}/api/exam/save`, {
           params: {
-            id: 'this.exam.examId',
+            id: this.exam.examId,
           },
         });
         if (response.data.success) {
@@ -214,7 +214,7 @@ export default {
         return;
       }
       this.previewDialogVisible = false;
-      this.$router.push({ name: 'exam-page', params: { examId: this.exam.examId } });
+      this.$router.push({ name: 'ExamAnswer', params: { examId: this.exam.examId } });
     },
   },
   async created() {
