@@ -1,34 +1,77 @@
 <template>
   <div class="knowledge-detail">
-    <el-card class="box-card">
-      <div slot="header" class="clearfix">
-        <span>{{ knowledgeDetail.name }}</span>
-      </div>
-      <div v-if="knowledgeDetail">
-        <el-descriptions column="1">
-          <el-descriptions-item label="前置知识点">{{ knowledgeDetail.prePoint }}</el-descriptions-item>
-          <el-descriptions-item label="后续知识点">{{ knowledgeDetail.postPoint }}</el-descriptions-item>
-          <el-descriptions-item label="内容详情">{{ knowledgeDetail.content }}</el-descriptions-item>
-          <el-descriptions-item label="认知点">{{ knowledgeDetail.cognition }}</el-descriptions-item>
-          <el-descriptions-item label="标签">{{ knowledgeDetail.tag }}</el-descriptions-item>
-          <el-descriptions-item label="相关知识点">{{ knowledgeDetail.relatedPoint }}</el-descriptions-item>
-          <el-descriptions-item label="备注">{{ knowledgeDetail.note }}</el-descriptions-item>
-          <el-descriptions-item label="知识点ID">{{ knowledgeDetail.id }}</el-descriptions-item>
-        </el-descriptions>
-      </div>
-      <div v-else>
-        <el-alert title="无法加载知识点详情" type="error" show-icon>
-        </el-alert>
-      </div>
-    </el-card>
+    <el-container>
+      <!-- 标题部分 -->
+      <el-header>
+        <el-page-header content="知识点详情" :title="knowledgeDetail?.name || '未命名知识点'" />
+      </el-header>
+
+      <!-- 内容部分 -->
+      <el-main>
+        <el-card class="box-card">
+          <div v-if="knowledgeDetail">
+            <table class="detail-table">
+              <tr>
+                <th>前置知识点</th>
+                <td>{{ knowledgeDetail.prePoint || '无' }}</td>
+              </tr>
+              <tr>
+                <th>后续知识点</th>
+                <td>{{ knowledgeDetail.postPoint || '无' }}</td>
+              </tr>
+              <tr>
+                <th>内容详情</th>
+                <td>{{ knowledgeDetail.content || '无' }}</td>
+              </tr>
+              <tr>
+                <th>认知点</th>
+                <td>{{ knowledgeDetail.cognition || '无' }}</td>
+              </tr>
+              <tr>
+                <th>标签</th>
+                <td>{{ knowledgeDetail.tag || '无' }}</td>
+              </tr>
+              <tr>
+                <th>相关知识点</th>
+                <td>{{ knowledgeDetail.relatedPoint || '无' }}</td>
+              </tr>
+              <tr>
+                <th>备注</th>
+                <td>{{ knowledgeDetail.note || '无' }}</td>
+              </tr>
+              <tr>
+                <th>知识点ID</th>
+                <td>{{ knowledgeDetail.id || '无' }}</td>
+              </tr>
+            </table>
+          </div>
+          <div v-else>
+            <!-- 错误提示 -->
+            <el-empty description="无法加载知识点详情">
+              <el-button type="primary" @click="reloadData">重新加载</el-button>
+            </el-empty>
+          </div>
+        </el-card>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+import axios from "axios";
+import { Header, PageHeader, Card, Empty, Button, Main } from "element-ui";
 
 export default {
-  name: 'KnowledgeDetail',
+  name: "KnowledgeDetail",
+  components: {
+    "el-header": Header,
+    "el-page-header": PageHeader,
+    "el-card": Card,
+    "el-empty": Empty,
+    "el-button": Button,
+    "el-main": Main,
+
+  },
   data() {
     return {
       knowledgeDetail: null,
@@ -41,28 +84,55 @@ export default {
     // Fetch the detailed information for the knowledge point
     async fetchKnowledgeDetail() {
       try {
-        console.log(this.$route.params.id);
         const knowledgeId = `"${this.$route.params.id || ""}"`;
-        console.log(knowledgeId)
-        const response = await axios.get(`http://localhost:8083/api/knowledge/detail`, {
-          params: { id: knowledgeId }
-        });
+        const response = await axios.get(
+          `http://localhost:8083/api/knowledge/detail`,
+          {
+            params: { id: knowledgeId },
+          }
+        );
         if (response.data.success) {
           this.knowledgeDetail = response.data.result;
         } else {
-          this.$message.error('获取知识点详情失败');
+          this.$message.error("获取知识点详情失败");
         }
       } catch (error) {
-        console.error('获取知识点详情时错误:', error);
-        this.$message.error('获取知识点详情错误');
+        console.error("获取知识点详情时错误:", error);
+        this.$message.error("获取知识点详情错误");
       }
-    }
-  }
+    },
+    reloadData() {
+      this.fetchKnowledgeDetail();
+    },
+  },
 };
 </script>
 
 <style scoped>
 .knowledge-detail {
   margin: 20px;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.detail-table th,
+.detail-table td {
+  border: 1px solid #FFFFFF;
+  padding: 10px;
+  text-align: left;
+}
+
+.detail-table th {
+  background-color: #FFFFFF;
+  font-weight: bold;
+  width: 20%;
+}
+
+.detail-table td {
+  width: 80%;
 }
 </style>
