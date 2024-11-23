@@ -38,19 +38,19 @@ public class ExamCorrectingController  {
     }
 
     // 教师对试卷进行二次批改或复核
-    public GradingResult reviewExam(String examId, Map<String, String> feedback) {
-        GradingResult result = new GradingResult(); // 返回一个批改结果
-
-        // 教师修改批改结果
-        for (String name : feedback.keySet()) {
-            String feed=feedback.get(name);
-            //System.out.println(name);
-            //System.out.println(feed);
-            result.addFeedback(name, feed);
-        }
-
-        return result;
-    }
+//    public GradingResult reviewExam(String examId,  GradingResult result) {
+//        GradingResult result = new GradingResult(); // 返回一个批改结果
+//
+//        // 教师修改批改结果
+//        for (String name : feedback.keySet()) {
+//            String feed=feedback.get(name);
+//            //System.out.println(name);
+//            //System.out.println(feed);
+//            result.addFeedback(name, feed);
+//        }
+//
+//        return result;
+//    }
 
     private static Exam getExam(String examId)
     {

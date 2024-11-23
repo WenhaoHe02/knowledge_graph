@@ -50,19 +50,13 @@ export default {
     async fetchAllKnowledgePoints() {
       try {
         const response = await this.$axios.get('http://localhost:8083/api/knowledge/search', {
-          headers: {
-            "x-api-token": this.$axios.defaults.headers["x-api-token"], // 添加 API token
-          },
           params: {
-            keyword:"'$'"
+            keyword:"''"
           },
         });
 
         if (response.data.success) {
-          this.allKnowledgePoints = response.data.result.map(item => ({
-            ...item,
-            isIncluded: { isSelected: false } 
-          }));
+          this.allKnowledgePoints = response.data.result.map(item => ({...item,isIncluded: { isSelected: false } }));
 
           // 加载成功后，初始化搜索结果
           this.results = [...this.allKnowledgePoints];
@@ -103,8 +97,8 @@ export default {
 
     // 跳转到知识点详情页面
     goToDetailPage(id) {
-      this.$router.push({ name: 'knowledge-detail', params: { id } });
-    }
+  this.$router.push({ name: 'KnowledgeDetail', params: { id } });
+}
   }
 };
 </script>
