@@ -6,18 +6,6 @@
         <h2>问答</h2>
       </div>
       <el-menu :default-active="activeMenu" class="sidebar-menu" mode="vertical" background-color="#f4f4f4">
-        <el-menu-item index="1" class="menu-item">
-          <router-link to="/knowledge-search">知识点搜索</router-link>
-        </el-menu-item>
-        <el-menu-item index="2" class="menu-item">
-          <router-link to="/knowledge-detail">知识点详情</router-link>
-        </el-menu-item>
-        <el-menu-item index="3" class="menu-item">
-          <router-link to="/exam-generation">试卷生成</router-link>
-        </el-menu-item>
-        <el-menu-item index="4" class="menu-item">
-          <router-link to="/exam-correction">试卷批改</router-link>
-        </el-menu-item>
         <el-menu-item index="5" class="menu-item">
           <router-link to="/">返回主菜单</router-link>
         </el-menu-item>
@@ -129,7 +117,7 @@ export default {
 
 .sidebar-header h2 {
   font-size: 1.5rem;
-  color: #333;
+  color: #87CEEB;
 }
 
 .sidebar-menu {
@@ -148,7 +136,8 @@ export default {
 
 /* Remove underline from router-link inside el-menu-item */
 ::v-deep .el-menu-item a {
-  text-decoration: none; /* Remove underline */
+  text-decoration: none;
+  /* Remove underline */
 }
 
 /* Main content styles */

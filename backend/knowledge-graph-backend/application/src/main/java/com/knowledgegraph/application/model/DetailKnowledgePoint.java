@@ -15,6 +15,16 @@ public class DetailKnowledgePoint extends KnowledgePoint {
     private String note;
 
     // 构造函数
+    public DetailKnowledgePoint() {
+        // 初始化默认值，避免 null 引发的潜在问题
+        this.prePoint = new ArrayList<>();
+        this.postPoint = new ArrayList<>();
+        this.relatedPoint = new ArrayList<>();
+        this.cognition = "";
+        this.tag = "";
+        this.note = "";
+    }
+
     public DetailKnowledgePoint(String id, String name, String content,
                                 List<String> prePoint, List<String> postPoint,
                                 String cognition, String tag,

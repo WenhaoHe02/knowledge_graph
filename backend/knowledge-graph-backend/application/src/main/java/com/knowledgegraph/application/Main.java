@@ -25,15 +25,17 @@ public class Main {
         System.out.println("Neo4j 数据库连接已初始化");
 
         try {
-            HttpServer server = HttpServer.create(new InetSocketAddress(8083), 0);
+            HttpServer server = HttpServer.create(new InetSocketAddress(1883), 0);
             SearchController.registerEndpoints(server);
             DetailController.registerEndpoints(server);
             ExamCorrectingHttpController.registerEndpoints(server);
             QAController.registerEndpoints(server);
             ExamController.registerEndpoints(server);
+            ModifyController.registerEntryPoint(server);
+            //ExamController.registerEndpoints(server);
             server.setExecutor(null); // 使用默认的线程池
             server.start();
-            System.out.println("HTTP 服务器已启动，监听端口 8083");
+            System.out.println("HTTP 服务器已启动，监听端口 1883");
         } catch (IOException e) {
             e.printStackTrace();
             Neo4jUtil.close();

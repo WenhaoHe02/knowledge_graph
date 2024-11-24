@@ -27,7 +27,6 @@
     <!-- Action Buttons -->
     <div class="button-group">
       <el-button type="primary" @click="openPreviewDialog">预览试卷</el-button>
-      <el-button @click="openRecordDialog">查看生成记录</el-button>
     </div>
 
     <!-- Pagination -->
@@ -40,10 +39,8 @@
         <h4>{{ exam ? exam.examTitle : '试卷内容' }}</h4>
         <p v-if="exam">试卷 ID: {{ exam.examId }}</p>
 
-        <el-table v-if="exam && exam.quesList" :data="exam.quesList" border>
-          <el-table-column prop="id" label="题目 ID"></el-table-column>
-          <el-table-column prop="content" label="题目内容"></el-table-column>
-          <el-table-column prop="answer" label="答案"></el-table-column>
+        <el-table v-if="exam && exam.quesList && exam.quesList.length > 0" :data="exam.quesList" border>
+          <el-table-column prop="titleContent" label="题目内容"></el-table-column>
         </el-table>
         <p v-else>暂无试卷内容可预览</p>
       </div>
@@ -51,28 +48,6 @@
       <div slot="footer" class="dialog-footer">
         <el-button @click="previewDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="generateExam">确定生成</el-button>
-      </div>
-    </el-dialog>
-
-
-    <!-- View Records Dialog -->
-    <el-dialog :visible.sync="recordsDialogVisible" title="查看生成记录" width="50%">
-      <div class="record-content">
-        <h4>生成记录</h4>
-        <el-table :data="generationRecords" border>
-          <el-table-column prop="time" label="时间"></el-table-column>
-          <el-table-column prop="action" label="操作"></el-table-column>
-          <el-table-column label="操作" width="150">
-            <template slot-scope="scope">
-              <el-button @click="viewRecordDetails(scope.row)" size="mini">查看</el-button>
-              <el-button @click="deleteRecord(scope.row)" type="danger" size="mini">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="recordsDialogVisible = false">关闭</el-button>
       </div>
     </el-dialog>
   </div>
@@ -103,7 +78,6 @@ export default {
       tableData: [],
       exam: null,
       previewDialogVisible: false,
-      recordsDialogVisible: false,
       generationRecords: [         // 记录生成的操作
         { time: '2024-11-15 12:30', action: '生成试卷' },
         { time: '2024-11-15 13:00', action: '生成试卷' },
@@ -144,13 +118,18 @@ export default {
     async openPreviewDialog() {
       this.previewDialogVisible = true;
       const baseUrl = "http://localhost:8083";
+      // const baseUrl = "http://127.0.0.1:4523/m1/5419934-5094163-default/api/exam/generate";
       try {
         const selectedIds = this.tableData
           .filter(item => item.isIncluded.isSelected)
           .map(item => item.id);
-        const response = await axios.post(`${baseUrl}/api/exam/generate`, {
-          selectedIds
-        });
+        const response = await axios.post(`${baseUrl}/api/exam/generate`, JSON.stringify(selectedIds),
+          {
+            headers: {
+              'Content-Type': 'application/json; charset=UTF-8'
+            }
+          }
+        );
 
         if (response.data.success) {
           this.exam = {
@@ -162,6 +141,7 @@ export default {
             type: "success",
             message: "成功发送数据"
           });
+          console.log(this.exam);
         } else {
           this.$message({
             type: "warning",
@@ -205,16 +185,12 @@ export default {
     handlePageChange(page) {
       this.currentPage = page;
     },
-    viewRecords() {
-      console.log("查看生成记录");
-      this.recordsDialogVisible = true;
-    },
     async generateExam() {
       try {
         const baseUrl = "http://localhost:8083";
         const response = await axios.get(`${baseUrl}/api/exam/save`, {
           params: {
-            id: 'this.exam.examId',
+            id: this.exam.examId,
           },
         });
         if (response.data.success) {
@@ -238,7 +214,7 @@ export default {
         return;
       }
       this.previewDialogVisible = false;
-      this.$router.push({ name: 'exam-page', params: { examId: this.exam.examId } });
+      this.$router.push({ name: 'ExamAnswer', params: { examId: this.exam.examId } });
     },
   },
   async created() {

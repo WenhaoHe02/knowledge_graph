@@ -7,10 +7,13 @@
       <el-menu :router="true" mode="horizontal">
         <el-menu-item index="/knowledge-search">知识点搜索</el-menu-item>
         <el-menu-item index="/knowledge-detail">知识点详情</el-menu-item>
+        <el-menu-item index="/knowledge-adding">知识点添加</el-menu-item>
+        <el-menu-item index="/knowledge-changing">知识点修改</el-menu-item>
         <el-menu-item index="/exam-generation">试卷生成</el-menu-item>
         <el-menu-item index="/exam-correction">试卷批改</el-menu-item>
         <el-menu-item index="/exam-select">试卷答题</el-menu-item>
         <el-menu-item index="/qna">问答</el-menu-item>
+        <el-menu-item index="/exam-answer">试卷内容</el-menu-item>
       </el-menu>
     </el-main>
   </el-container>

@@ -1,13 +1,14 @@
 package com.knowledgegraph.application.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.knowledgegraph.application.model.GradingResult;
-import com.knowledgegraph.application.model.KnowledgePoint;
+import com.knowledgegraph.application.model.*;
+import com.knowledgegraph.application.repository.ExamCorrectingReposity;
 import com.knowledgegraph.application.service.SearchService;
 import com.knowledgegraph.application.service.SearchServiceImpl;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import lombok.ToString;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -23,6 +24,7 @@ import java.util.regex.Pattern;
 public class ExamCorrectingHttpController {
 
     public static ExamCorrectingController examCorrectingController=new ExamCorrectingController();
+    public static ExamCorrectingReposity examCorrectingReposity=new ExamCorrectingReposity();
     public static void registerEndpoints(HttpServer server) {
         server.createContext("/api/exam", new ExamCorrectingHandler());
         //server.createContext("/api/exam");
@@ -48,28 +50,32 @@ public class ExamCorrectingHttpController {
             // 获取请求体内容
             InputStream inputStream = exchange.getRequestBody();
             String requestBody = readInputStream(inputStream);
-            // 将请求体解析为 Map
-            Map<String, String> answers = parseRequestBody(requestBody);
+
             //System.out.println(answers);
 
-            //获取试卷Id
-            Pattern pattern = Pattern.compile("/api/exam/(\\d+)/");
+            //获取试卷Id或用户答案id
+            Pattern pattern = Pattern.compile("/api/exam/([^/]+)/");
             Matcher matcher = pattern.matcher(requestPath);
             matcher.find();
             String examId = matcher.group(1);
-            //System.out.println(examId);
-
+            System.out.println(examId);
             GradingResult res=new GradingResult();
 
             boolean flag=true;
 
             // 处理 POST 请求
             if ("POST".equalsIgnoreCase(requestMethod)) {
+                // 将请求体解析为 Map
+                Map<String, String> answers = parseRequestBody(requestBody);
+                String[] UserAnsId = requestParams.split("userAnsId=");
                 if (requestPath.endsWith("/submit")) {
+                    examCorrectingReposity.addUserAns(UserAnsId[1],examId,answers);
                     res=examCorrectingController.submitExam(examId,answers);
-
+                    examCorrectingReposity.addCorrectingRes(UserAnsId[1],res);
                 } else if (requestPath.endsWith("/grade")) {
+                    examCorrectingReposity.addUserAns(UserAnsId[1],examId,answers);
                     res=examCorrectingController.gradeWithAI(examId,answers);
+                    examCorrectingReposity.addCorrectingRes(UserAnsId[1],res);
                 } else {
                     flag=false;
                     exchange.sendResponseHeaders(400, -1); // 错误的请求
@@ -108,8 +114,11 @@ public class ExamCorrectingHttpController {
                 }
 
             } else if ("GET".equalsIgnoreCase(requestMethod)) {
+                System.out.println(requestBody);
+                res=parseRequestBody2(requestBody);
                 if (requestPath.endsWith("/review")) {
-                    res=examCorrectingController.reviewExam(examId,answers);
+                    //res=examCorrectingController.reviewExam(examId,gradRes);
+                    examCorrectingReposity.addCorrectingRes(examId,res);
                 } else {
                     flag=false;
                     exchange.sendResponseHeaders(400, -1); // 错误的请求
@@ -132,7 +141,7 @@ public class ExamCorrectingHttpController {
                     responseJson.put("feedback", resultArray);
 
                     String result = responseJson.toString();
-                    //System.out.println(result);
+                    System.out.println(result);
 
                     exchange.getResponseHeaders().add("Content-Type", "application/json");
                     exchange.sendResponseHeaders(200, result.getBytes(StandardCharsets.UTF_8).length);
@@ -177,6 +186,28 @@ public class ExamCorrectingHttpController {
             }
 
             return answersMap;
+        }
+
+        // 将请求体解析为 GradingRes（假设是 JSON 格式）
+        private GradingResult parseRequestBody2(String requestBody) throws IOException {
+            ObjectMapper objectMapper = new ObjectMapper();
+            // 将 JSON 数组转换为一个 List<Map<String, String>>
+            Request answersList = objectMapper.readValue(requestBody, Request.class);
+            // 创建一个 GradingResult 来存储解析后的结果
+            GradingResult res =new GradingResult();
+            int i=1;
+            for(CorrectionResult cor:answersList.getCorrectionResults())
+            {
+                System.out.println(cor);
+                res.addScore(String.valueOf(i),cor.getScore());
+                res.addFeedback(String.valueOf(i),cor.getFeedback());
+                ++i;
+            }
+            // 输出结果，确认转换成功
+            //System.out.println("Scores: " + res.getScores());
+            //System.out.println("Feedback: " + res.getFeedback());
+            //System.out.println("Total Score: " + res.getTotalScore());
+            return res;
         }
     }
 }

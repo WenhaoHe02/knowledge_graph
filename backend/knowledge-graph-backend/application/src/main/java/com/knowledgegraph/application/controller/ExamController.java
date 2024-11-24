@@ -28,6 +28,8 @@ public class ExamController {
         server.createContext("/api/exam/getExam", new CORSHandler(new GetExamHandler()));
         // 提交试卷的接口
         server.createContext("/api/exam/submit", new CORSHandler(new SubmitExamHandler()));
+        // 删除试卷的接口
+        server.createContext("/api/exam/del", new CORSHandler(new DelExamHandler()));
     }
 
     /**
@@ -42,21 +44,18 @@ public class ExamController {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            // 设置 CORS 头
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
             exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
 
-            // 处理 OPTIONS 请求
             if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(204, -1); // No Content
-                return;
+            } else {
+                next.handle(exchange);
             }
-
-            // 继续处理实际请求
-            next.handle(exchange);
         }
     }
+
 
     // 生成试卷接口的处理器
     static class GenerateExamHandler implements HttpHandler {
@@ -173,6 +172,49 @@ public class ExamController {
                 }
             } else {
                 exchange.sendResponseHeaders(405, -1); // 方法不允许
+            }
+        }
+    }
+    // 删除试卷接口的处理器
+    static class DelExamHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+
+                try (InputStream is = exchange.getRequestBody()) {
+                    byte[] body = is.readAllBytes();
+                    String requestBody = new String(body, StandardCharsets.UTF_8);
+
+                    // 解析请求体
+                    JSONObject requestJson = new JSONObject(requestBody);
+                    if (!requestJson.has("examId")) {
+                        throw new IllegalArgumentException("缺少必要的参数 examId");
+                    }
+                    String examId = requestJson.getString("examId");
+                    System.out.println("收到的删除试卷请求: " + examId);
+
+                    // 调用服务删除试卷
+                    boolean isDeleted = examService.deleteExam(examId);
+
+                    // 构建响应
+                    JSONObject responseJson = new JSONObject();
+                    responseJson.put("code", isDeleted ? 200 : 404);
+                    String response = responseJson.toString();
+
+                    exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response.getBytes(StandardCharsets.UTF_8));
+                    }
+                } catch (IllegalArgumentException e) {
+                    System.err.println("请求体错误: " + e.getMessage());
+                    exchange.sendResponseHeaders(400, -1); // Bad Request
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(500, -1); // Internal Server Error
+                }
+            } else {
+                exchange.sendResponseHeaders(405, -1); // Method Not Allowed
             }
         }
     }
