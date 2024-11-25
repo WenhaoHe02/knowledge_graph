@@ -30,6 +30,9 @@ public class ExamController {
         server.createContext("/api/exam/submit", new CORSHandler(new SubmitExamHandler()));
         // 删除试卷的接口
         server.createContext("/api/exam/del", new CORSHandler(new DelExamHandler()));
+        // 注册获取试卷对应用户作答的接口
+        server.createContext("/api/exam/getAnswer", new CORSHandler(new GetAnswersByExamIdHandler()));
+
     }
 
     /**
@@ -44,6 +47,7 @@ public class ExamController {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            exchange.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
             exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
@@ -208,6 +212,49 @@ public class ExamController {
                     }
                 } catch (IllegalArgumentException e) {
                     System.err.println("请求体错误: " + e.getMessage());
+                    exchange.sendResponseHeaders(400, -1); // Bad Request
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(500, -1); // Internal Server Error
+                }
+            } else {
+                exchange.sendResponseHeaders(405, -1); // Method Not Allowed
+            }
+        }
+    }
+
+    static class GetAnswersByExamIdHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                try {
+                    // 获取查询参数
+                    String query = exchange.getRequestURI().getQuery();
+                    if (query == null || !query.contains("examId=")) {
+                        throw new IllegalArgumentException("缺少必要的参数 examId");
+                    }
+
+                    // 提取 examId
+                    String examId = query.split("examId=")[1];
+                    System.out.println("提取的 examId: " + examId);
+
+                    // 调用服务获取用户作答
+                    JSONArray userAnswers = examService.getAnswersByExamId(examId);
+
+                    // 构建响应
+                    JSONObject responseJson = new JSONObject();
+                    responseJson.put("code", 200);
+                    responseJson.put("userAnswers", userAnswers);
+                    responseJson.put("success", true);
+
+                    String response = responseJson.toString();
+                    exchange.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
+                    exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response.getBytes(StandardCharsets.UTF_8));
+                    }
+                } catch (IllegalArgumentException e) {
+                    System.err.println("请求错误: " + e.getMessage());
                     exchange.sendResponseHeaders(400, -1); // Bad Request
                 } catch (Exception e) {
                     e.printStackTrace();

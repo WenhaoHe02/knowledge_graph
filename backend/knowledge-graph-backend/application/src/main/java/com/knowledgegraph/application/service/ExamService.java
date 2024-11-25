@@ -42,4 +42,5 @@ public interface ExamService {
      * @return 提交是否成功
      */
     boolean deleteExam(String examId);
+    JSONArray getAnswersByExamId(String examId);
 }
