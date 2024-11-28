@@ -20,24 +20,14 @@ public class ExamController {
     private static final ExamService examService = new ExamServiceImpl();
 
     public static void registerEndpoints(HttpServer server) {
-        // 注册生成试卷的接口
         server.createContext("/api/exam/generate", new CORSHandler(new GenerateExamHandler()));
-        // 注册保存试卷的接口
-        server.createContext("/api/exam/save", new CORSHandler(new SaveExamHandler()));
-        // 注册获取试卷的接口
         server.createContext("/api/exam/getExam", new CORSHandler(new GetExamHandler()));
-        // 提交试卷的接口
         server.createContext("/api/exam/submit", new CORSHandler(new SubmitExamHandler()));
-        // 删除试卷的接口
-        server.createContext("/api/exam/del", new CORSHandler(new DelExamHandler()));
-        // 注册获取试卷对应用户作答的接口
         server.createContext("/api/exam/getAnswer", new CORSHandler(new GetAnswersByExamIdHandler()));
-
+        server.createContext("/api/exam/save", new CORSHandler(new SaveExamHandler())); // 保留接口
+        server.createContext("/api/exam/del", new CORSHandler(new DelExamHandler()));   // 保留接口
     }
 
-    /**
-     * 通用 CORS 处理器
-     */
     static class CORSHandler implements HttpHandler {
         private final HttpHandler next;
 
@@ -53,28 +43,27 @@ public class ExamController {
             exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
 
             if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
-                exchange.sendResponseHeaders(204, -1); // No Content
+                exchange.sendResponseHeaders(204, -1);
             } else {
                 next.handle(exchange);
             }
         }
     }
 
-
-    // 生成试卷接口的处理器
+    // 生成试卷接口
     static class GenerateExamHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 try (InputStream is = exchange.getRequestBody()) {
-                    byte[] body = is.readAllBytes();
-                    String requestBody = new String(body, StandardCharsets.UTF_8);
-                    System.out.println("收到的生成试卷请求: " + requestBody);
+                    String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    JSONObject requestJson = new JSONObject(requestBody);
 
-                    JSONArray knowledgeIds = new JSONArray(requestBody);
-                    JSONObject responseJson = examService.generateExam(knowledgeIds);
+                    String username = requestJson.getString("username");
+                    JSONArray knowledgeIds = requestJson.getJSONArray("knowledgeIds");
 
-                    System.out.println("生成的试卷响应: " + responseJson.toString());
+                    JSONObject responseJson = examService.generateExam(knowledgeIds, username);
+
                     String response = responseJson.toString();
                     exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
                     try (OutputStream os = exchange.getResponseBody()) {
@@ -85,83 +74,79 @@ public class ExamController {
                     exchange.sendResponseHeaders(500, -1);
                 }
             } else {
-                exchange.sendResponseHeaders(405, -1); // 方法不允许
+                exchange.sendResponseHeaders(405, -1);
             }
         }
     }
 
-    // 保存试卷接口的处理器
-    static class SaveExamHandler implements HttpHandler {
+    // 获取试卷接口
+    static class GetExamHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-                String query = exchange.getRequestURI().getQuery();
-                if (query != null && query.startsWith("id=")) {
-                    String examId = query.split("=")[1];
-                    System.out.println("收到的保存试卷请求 ID: " + examId);
+                try {
+                    String query = exchange.getRequestURI().getQuery();
+                    String examId = null, username = null;
 
-                    JSONObject responseJson = examService.saveExam(examId);
+                    if (query != null) {
+                        for (String param : query.split("&")) {
+                            String[] keyValue = param.split("=");
+                            if (keyValue.length == 2) { // 确保键值对格式正确
+                                if (keyValue[0].equals("examId")) {
+                                    examId = keyValue[1]; // 如果 examId 存在，获取其值
+                                } else if (keyValue[0].equals("username")) {
+                                    username = keyValue[1]; // 获取用户名
+                                }
+                            }
+                        }
+                    }
 
-                    System.out.println("保存试卷响应: " + responseJson.toString());
+                    if (username == null || username.isEmpty()) {
+                        // 如果 username 为空，抛出异常
+                        throw new IllegalArgumentException("缺少必要的参数 username");
+                    }
+
+// 调用服务方法获取试卷
+                    JSONArray responseJson;
+                    if (examId != null && !examId.isEmpty()) {
+                        // 如果 examId 存在，则获取指定试卷
+                        responseJson = examService.getExam(examId, username);
+                    } else {
+                        // 如果 examId 不存在，则获取该用户的所有试卷
+                        responseJson = examService.getExam(null, username);
+                    }
+
+
                     String response = responseJson.toString();
                     exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
                     try (OutputStream os = exchange.getResponseBody()) {
                         os.write(response.getBytes(StandardCharsets.UTF_8));
                     }
-                } else {
-                    exchange.sendResponseHeaders(400, -1); // 请求错误
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(500, -1);
                 }
             } else {
-                exchange.sendResponseHeaders(405, -1); // 方法不允许
+                exchange.sendResponseHeaders(405, -1);
             }
         }
     }
 
-    // 获取试卷接口的处理器
-    static class GetExamHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-                String query = exchange.getRequestURI().getQuery();
-                String examId = null;
-
-                // 解析参数
-                if (query != null && query.startsWith("examId=")) {
-                    examId = query.split("=")[1];
-                }
-
-                // 调用服务获取试卷
-                JSONArray responseJson = examService.getExam(examId);
-
-                String response = responseJson.toString();
-                exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(response.getBytes(StandardCharsets.UTF_8));
-                }
-            } else {
-                exchange.sendResponseHeaders(405, -1); // 方法不允许
-            }
-        }
-    }
-
-    // 提交试卷接口的处理器
+    // 提交试卷接口
     static class SubmitExamHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 try (InputStream is = exchange.getRequestBody()) {
-                    byte[] body = is.readAllBytes();
-                    String requestBody = new String(body, StandardCharsets.UTF_8);
-
-                    // 解析请求参数
+                    String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                     JSONObject requestJson = new JSONObject(requestBody);
+
                     String examId = requestJson.getString("examId");
                     JSONArray answers = requestJson.getJSONArray("answers");
+                    String username = requestJson.getString("username");
 
-                    // 调用服务提交试卷
-                    boolean isSubmitted = examService.submitExam(examId, answers);
+                    boolean isSubmitted = examService.submitExam(examId, answers, username);
 
-                    // 构建响应
                     JSONObject responseJson = new JSONObject();
                     responseJson.put("code", isSubmitted ? 200 : 500);
 
@@ -175,93 +160,121 @@ public class ExamController {
                     exchange.sendResponseHeaders(500, -1);
                 }
             } else {
-                exchange.sendResponseHeaders(405, -1); // 方法不允许
-            }
-        }
-    }
-    // 删除试卷接口的处理器
-    static class DelExamHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod())) {
-                exchange.getResponseHeaders().add("Content-Type", "application/json");
-
-                try (InputStream is = exchange.getRequestBody()) {
-                    byte[] body = is.readAllBytes();
-                    String requestBody = new String(body, StandardCharsets.UTF_8);
-
-                    // 解析请求体
-                    JSONObject requestJson = new JSONObject(requestBody);
-                    if (!requestJson.has("examId")) {
-                        throw new IllegalArgumentException("缺少必要的参数 examId");
-                    }
-                    String examId = requestJson.getString("examId");
-                    System.out.println("收到的删除试卷请求: " + examId);
-
-                    // 调用服务删除试卷
-                    boolean isDeleted = examService.deleteExam(examId);
-
-                    // 构建响应
-                    JSONObject responseJson = new JSONObject();
-                    responseJson.put("code", isDeleted ? 200 : 404);
-                    String response = responseJson.toString();
-
-                    exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
-                    try (OutputStream os = exchange.getResponseBody()) {
-                        os.write(response.getBytes(StandardCharsets.UTF_8));
-                    }
-                } catch (IllegalArgumentException e) {
-                    System.err.println("请求体错误: " + e.getMessage());
-                    exchange.sendResponseHeaders(400, -1); // Bad Request
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    exchange.sendResponseHeaders(500, -1); // Internal Server Error
-                }
-            } else {
-                exchange.sendResponseHeaders(405, -1); // Method Not Allowed
+                exchange.sendResponseHeaders(405, -1);
             }
         }
     }
 
+    // 获取用户作答接口
     static class GetAnswersByExamIdHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
                 try {
-                    // 获取查询参数
                     String query = exchange.getRequestURI().getQuery();
-                    if (query == null || !query.contains("examId=")) {
-                        throw new IllegalArgumentException("缺少必要的参数 examId");
+                    String examId = null, username = null;
+
+                    if (query != null) {
+                        for (String param : query.split("&")) {
+                            String[] keyValue = param.split("=");
+                            if (keyValue.length == 2) { // 确保键值对格式正确
+                                if (keyValue[0].equals("examId")) {
+                                    examId = keyValue[1]; // 如果 examId 存在，获取其值
+                                } else if (keyValue[0].equals("username")) {
+                                    username = keyValue[1]; // 获取用户名
+                                }
+                            }
+                        }
                     }
 
-                    // 提取 examId
-                    String examId = query.split("examId=")[1];
-                    System.out.println("提取的 examId: " + examId);
+                    if (username == null || username.isEmpty()) {
+                        // 如果 username 为空，抛出异常
+                        throw new IllegalArgumentException("缺少必要的参数 username");
+                    }
 
-                    // 调用服务获取用户作答
-                    JSONArray userAnswers = examService.getAnswersByExamId(examId);
+// 调用服务方法获取试卷
+                    JSONArray userAnswers;
+                    if (examId != null && !examId.isEmpty()) {
+                        // 如果 examId 存在，则获取指定试卷
+                        userAnswers = examService.getAnswersByExamId(examId, username);
+                    } else {
+                        // 如果 examId 不存在，则获取该用户的所有试卷
+                        userAnswers = examService.getAnswersByExamId(null, username);
+                    }
 
-                    // 构建响应
                     JSONObject responseJson = new JSONObject();
                     responseJson.put("code", 200);
                     responseJson.put("userAnswers", userAnswers);
-                    responseJson.put("success", true);
 
                     String response = responseJson.toString();
-                    exchange.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
                     exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
                     try (OutputStream os = exchange.getResponseBody()) {
                         os.write(response.getBytes(StandardCharsets.UTF_8));
                     }
-                } catch (IllegalArgumentException e) {
-                    System.err.println("请求错误: " + e.getMessage());
-                    exchange.sendResponseHeaders(400, -1); // Bad Request
                 } catch (Exception e) {
                     e.printStackTrace();
-                    exchange.sendResponseHeaders(500, -1); // Internal Server Error
+                    exchange.sendResponseHeaders(500, -1);
                 }
             } else {
-                exchange.sendResponseHeaders(405, -1); // Method Not Allowed
+                exchange.sendResponseHeaders(405, -1);
+            }
+        }
+    }
+
+    // 保留的接口：保存试卷
+    static class SaveExamHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String query = exchange.getRequestURI().getQuery();
+                if (query != null && query.startsWith("id=")) {
+                    String examId = query.split("=")[1];
+                    JSONObject responseJson = examService.saveExam(examId);
+
+                    String response = responseJson.toString();
+                    exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response.getBytes(StandardCharsets.UTF_8));
+                    }
+                } else {
+                    exchange.sendResponseHeaders(400, -1);
+                }
+            } else {
+                exchange.sendResponseHeaders(405, -1);
+            }
+        }
+    }
+
+    // 保留的接口：删除试卷
+    static class DelExamHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod())) {
+                try (InputStream is = exchange.getRequestBody()) {
+                    String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    JSONObject requestJson = new JSONObject(requestBody);
+
+                    if (!requestJson.has("examId")) {
+                        throw new IllegalArgumentException("缺少必要的参数 examId");
+                    }
+
+                    String examId = requestJson.getString("examId");
+                    boolean isDeleted = examService.deleteExam(examId);
+
+                    JSONObject responseJson = new JSONObject();
+                    responseJson.put("code", isDeleted ? 200 : 404);
+
+                    String response = responseJson.toString();
+                    exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response.getBytes(StandardCharsets.UTF_8));
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(500, -1);
+                }
+            } else {
+                exchange.sendResponseHeaders(405, -1);
             }
         }
     }
