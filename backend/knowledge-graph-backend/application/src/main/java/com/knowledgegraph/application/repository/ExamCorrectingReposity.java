@@ -41,9 +41,10 @@ public class ExamCorrectingReposity {
     // 使用Neo4jUtil获取Driver
     private final DataReader dataReader = new DataReader();
 
-    public void addCorrectingRes(String userAnsId, GradingResult gradRes)
+    public void addCorrectingRes(String userAnsId, GradingResult gradRes,String userName)
     {
-        String matchQuery="MATCH (n:`用户作答` {id: \""+userAnsId+"\"})\n";
+        String matchQuery="MATCH (n:用户作答 {id: \""+userAnsId+"\"})\n";
+        String matchUserQuery="MATCH (m:用户信息 {userName: \""+userName+"\"})\n";
 
         Vector<String> v=new Vector();
         Vector<Integer> u=new Vector();
@@ -54,21 +55,23 @@ public class ExamCorrectingReposity {
             v.add("\""+feedback+"\"");
         }
 
-        String createQuery="CREATE (p:批改结果 {scores:"+u+",feedbacks:"+v+",totalScore:"+gradRes.getTotalScore()+"})-[:correctRes]->(n)";
-        System.out.println(matchQuery+createQuery);
-        dataReader.executeQuery(matchQuery+createQuery, mapToExam());
+        String createQuery="CREATE (p:批改结果 {scores:"+u+",feedbacks:"+v+",totalScore:"+gradRes.getTotalScore()+"})-[:correctRes]->(n)\nCREATE (n)-[:correctRes]->(p)\n";
+        String createUserQuery="CREATE (p)-[:correctRes]->(m)\nCREATE (m)-[:correctRes]->(p)\n";
+        String createUser2Query="CREATE (m)-[:UserAns]->(n)\nCREATE (n)-[:UserAns]->(m)";
+        System.out.println(matchQuery+matchUserQuery+createQuery+createUserQuery+createUser2Query);
+        dataReader.executeQuery(matchQuery+matchUserQuery+createQuery+createUserQuery+createUser2Query, mapToExam());
         //System.out.println(matchQuery+createQuery);
     }
 
     public void addUserAns(String userAnsId,String examId,Map<String, String> answers)
     {
-        String matchQuery = "MATCH (n:试卷 {id:"+examId+"})";
+        String matchQuery = "MATCH (n:试卷 {id:\""+examId+"\"})";
         Vector<String> v=new Vector();
         for (String name : answers.keySet()) {
             String answer=answers.get(name);
             v.add("\""+answer+"\"");
         }
-        String createQuery="CREATE (p:用户作答 {answers:"+v+",id:\""+userAnsId+"\"})-[:answer_relation]->(n)";
+        String createQuery="CREATE (p:用户作答 {answers:"+v+",id:\""+userAnsId+"\"})-[:answer_relation]->(n)\nCREATE(n)-[:answer_relation]->(p)";
         System.out.println(matchQuery+createQuery);
         dataReader.executeQuery(matchQuery+createQuery, mapToExam());
     }
@@ -86,7 +89,6 @@ public class ExamCorrectingReposity {
         List<Exam> tmp= dataReader.executeQuery(query, mapToExam2());
         return tmp.get(0);
     }
-
 
     public Map<String, String> searchQues(List<Integer> num){
         Map<String, String> res=new HashMap<>();
@@ -135,8 +137,9 @@ public class ExamCorrectingReposity {
             // 解析 JSON 为 List<Ques> 对象
             List<Ques> qs = gson.fromJson(tmp, new TypeToken<List<Ques>>(){}.getType());
             System.out.println(qs);
+            int i=1;
             for(Ques q:qs)
-                answers.put(q.getQues(),q.getAns());
+                answers.put(String.valueOf(i++),q.getAns());
             ex.setAnswers(answers);
             ex.print();
             return ex;

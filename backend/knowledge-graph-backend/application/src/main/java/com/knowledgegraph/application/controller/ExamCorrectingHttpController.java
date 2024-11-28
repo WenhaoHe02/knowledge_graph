@@ -67,15 +67,15 @@ public class ExamCorrectingHttpController {
             if ("POST".equalsIgnoreCase(requestMethod)) {
                 // 将请求体解析为 Map
                 Map<String, String> answers = parseRequestBody(requestBody);
-                String[] UserAnsId = requestParams.split("userAnsId=");
+                String[] UserAnsId = requestParams.split("userAnsId=|&username=");
                 if (requestPath.endsWith("/submit")) {
                     examCorrectingReposity.addUserAns(UserAnsId[1],examId,answers);
                     res=examCorrectingController.submitExam(examId,answers);
-                    examCorrectingReposity.addCorrectingRes(UserAnsId[1],res);
+                    examCorrectingReposity.addCorrectingRes(UserAnsId[1],res,UserAnsId[2]);
                 } else if (requestPath.endsWith("/grade")) {
                     examCorrectingReposity.addUserAns(UserAnsId[1],examId,answers);
                     res=examCorrectingController.gradeWithAI(examId,answers);
-                    examCorrectingReposity.addCorrectingRes(UserAnsId[1],res);
+                    examCorrectingReposity.addCorrectingRes(UserAnsId[1],res,UserAnsId[2]);
                 } else {
                     flag=false;
                     exchange.sendResponseHeaders(400, -1); // 错误的请求
@@ -117,8 +117,9 @@ public class ExamCorrectingHttpController {
                 System.out.println(requestBody);
                 res=parseRequestBody2(requestBody);
                 if (requestPath.endsWith("/review")) {
+                    String[] UserAnsId = requestParams.split("username=");
                     //res=examCorrectingController.reviewExam(examId,gradRes);
-                    examCorrectingReposity.addCorrectingRes(examId,res);
+                    examCorrectingReposity.addCorrectingRes(examId,res,UserAnsId[1]);
                 } else {
                     flag=false;
                     exchange.sendResponseHeaders(400, -1); // 错误的请求

@@ -13,11 +13,12 @@ import KnowledgeAdding from '../components/KnowledgeAdding.vue';
 import KnowledgeChanging from '../components/KnowledgeChanging.vue';
 import KnowledgeViewPage from '../components/KnowledgeViewPage.vue';
 import ModifyViewPage from '@/components/ModifyViewPage.vue';
+import Login from '../components/Login.vue';
 Vue.use(Router);
 
 export default new Router({
   routes: [
-    { path: '/', component: Home },
+    { path: '/Home', name: 'Home', component: Home },
     { path: '/knowledge-search', component: KnowledgeSearch },
     { name: 'KnowledgeDetail', path: '/knowledge-detail', component: KnowledgeDetail },
     { path: '/exam-generation', component: ExamGeneration },
@@ -29,5 +30,6 @@ export default new Router({
     { path: '/knowledge-changing', component: KnowledgeChanging },
     { path: '/knowledge-view-page', component: KnowledgeViewPage },
     { path: '/modify-view-page', component: ModifyViewPage },
+    { path: '/log-in', component: Login }
   ]
 });
