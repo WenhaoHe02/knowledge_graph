@@ -11,11 +11,12 @@ import ExamSelect from "../components/ExamSelect.vue";
 import ExamAnswer from "../components/ExamAnswer.vue";
 import KnowledgeAdding from '../components/KnowledgeAdding.vue';
 import KnowledgeChanging from '../components/KnowledgeChanging.vue';
+import Login from '../components/Login.vue';
 Vue.use(Router);
 
 export default new Router({
   routes: [
-    { path: '/', component: Home },
+    { path: '/Home', name:'Home',component: Home },
     { path: '/knowledge-search', component: KnowledgeSearch },
     { name: 'KnowledgeDetail', path: '/knowledge-detail', component: KnowledgeDetail },
     { path: '/exam-generation', component: ExamGeneration },
@@ -25,5 +26,6 @@ export default new Router({
     { name: ' ExamAnswer', path: '/exam-answer', component: ExamAnswer },
     { path: '/knowledge-adding', component: KnowledgeAdding },
     { path: '/knowledge-changing', component: KnowledgeChanging },
+    { name: 'Login', path: '/', component: Login },
   ],
 });
