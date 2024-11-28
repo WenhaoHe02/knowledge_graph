@@ -32,6 +32,9 @@ public class Main {
             QAController.registerEndpoints(server);
             ExamController.registerEndpoints(server);
             ModifyController.registerEntryPoint(server);
+            //ExamController.registerEndpoints(server);
+            RegisterController.registerEndpoints(server);
+            RoleController.registerEndpoints(server);
             server.setExecutor(null); // 使用默认的线程池
             server.start();
             System.out.println("HTTP 服务器已启动，监听端口 8083");
