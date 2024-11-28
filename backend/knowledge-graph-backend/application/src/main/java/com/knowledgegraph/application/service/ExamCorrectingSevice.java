@@ -77,11 +77,30 @@ public class ExamCorrectingSevice {
     private static String __retriever_prompt =
             "You are an AI expert specializing in grading exam questions for software project management."+
             "Based on the given questions and reference answers, as well as user provided answers, you will grade and grade the exam questions." +
+            "The types of questions include single-choice questions, true/false questions, and short answer questions. "+
+            "The reference answers for single-choice questions are A, B, C, or D, while the reference answers for true or false questions are T or F. "+
             "I will provide a list of questions and reference answers in the following format"+quesList+
             "user input answers in the following format"+ansList+
              "please grade the exam questions based on these and provide the grading results in the following format\n"+
             "'''\n"+json_example+"\n'''"+
-            "please answer in Chinese and provide detailed and comprehensive relationships in your reply.\n";
+            "\nplease answer in Chinese and provide detailed and comprehensive relationships in your reply.\n"+
+            "Please provide the correction results in accordance with this format,without any unnecessary comments or text\n"+
+            "Please use '' and '' '' to identify the correction results in JSON format, for example\n"+
+            "'''\n"+
+            """
+            {
+              "scores": {
+                "question1": 10,
+                "question2": 15
+              },
+              "feedback": {
+                "question1": "Well done!",
+                "question2": "Needs improvement"
+              },
+              "totalScore": 25
+            }                   
+            """+
+            "'''\n";
 
     private static String getText(Map<String, String> quesList, Map<String, String> answers) throws JsonProcessingException {
         // 创建ObjectMapper实例
@@ -151,14 +170,14 @@ public class ExamCorrectingSevice {
                         {
                             if (accumulator.getDelta() != null && accumulator.getDelta().getContent() != null) {
                                 responseBuilder.append(accumulator.getDelta().getContent());
-                                //System.out.print(accumulator.getDelta().getContent());
+                                System.out.print(accumulator.getDelta().getContent());
                             }
                         }
                     })
                     .lastElement()
                     .blockingGet();
             res = extractTextBetweenBackticks(responseBuilder.toString());
-            //System.out.println(res);
+            System.out.println(res);
             return res;
         }
 
@@ -166,7 +185,10 @@ public class ExamCorrectingSevice {
     }
 
     public static GradingResult Correcting(Map<String, String> quesList,Map<String, String> answers) throws JsonProcessingException {
-        String res=getResponse(getText( quesList, answers));
+        System.out.println(getText(quesList, answers));
+        String res=getResponse(getText(quesList, answers));
+        while(res==null)
+            res=getResponse(getText(quesList, answers));
         // 创建Gson实例
         Gson gson = new Gson();
 

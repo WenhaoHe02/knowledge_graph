@@ -31,10 +31,60 @@ public class ExamCorrectingController  {
 
     // 批改试卷（后台调用）
     public GradingResult gradeWithAI( String examId,  Map<String, String> answers) throws JsonProcessingException {
+
+        GradingResult res=new GradingResult();
+        System.out.println("!!!!");
         Exam exam = getExam(examId);
         Map<String, String> quesList = exam.answers;
         //System.out.println(quesList);
-        return ExamCorrectingSevice.Correcting(quesList, answers);
+        res=ExamCorrectingSevice.Correcting(quesList, answers);
+        return res;
+    }
+
+    public GradingResult chioceCorrect( Map<String, String> quesList,  Map<String, String> answers)
+    {
+        GradingResult res=new GradingResult();
+
+        for (String name : quesList.keySet()) {
+            String feed=quesList.get(name);
+            String ans=answers.get(name);
+            String standAns=quesList.get(name);
+            if(ans==standAns)
+            {
+                res.addScore(name,10);
+                res.addFeedback(name,"正确");
+            }
+            else
+            {
+                res.addScore(name,0);
+                res.addFeedback(name,"错误");
+            }
+        }
+
+        return res;
+    }
+
+    public GradingResult judgeCorrect( Map<String, String> quesList,  Map<String, String> answers)
+    {
+        GradingResult res=new GradingResult();
+
+        for (String name : quesList.keySet()) {
+            String feed=quesList.get(name);
+            String ans=answers.get(name);
+            String standAns=quesList.get(name);
+            if(ans==standAns)
+            {
+                res.addScore(name,10);
+                res.addFeedback(name,"正确");
+            }
+            else
+            {
+                res.addScore(name,0);
+                res.addFeedback(name,"错误");
+            }
+        }
+
+        return res;
     }
 
     // 教师对试卷进行二次批改或复核
@@ -55,6 +105,6 @@ public class ExamCorrectingController  {
     private static Exam getExam(String examId)
     {
         ExamCorrectingReposity exRe=new ExamCorrectingReposity();
-        return exRe.searchExam(examId);
+        return exRe.searchExam2(examId);
     }
 }
