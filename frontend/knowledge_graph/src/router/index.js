@@ -18,7 +18,7 @@ Vue.use(Router);
 
 export default new Router({
   routes: [
-    { path: '/Home', name: 'Home', component: Home },
+    { path: '/', name: 'Home', component: Home },
     { path: '/knowledge-search', component: KnowledgeSearch },
     { name: 'KnowledgeDetail', path: '/knowledge-detail', component: KnowledgeDetail },
     { path: '/exam-generation', component: ExamGeneration },

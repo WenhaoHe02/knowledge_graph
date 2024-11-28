@@ -5,23 +5,11 @@
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
           <label for="username">Username:</label>
-          <input
-            type="text"
-            id="username"
-            v-model="form.username"
-            required
-            placeholder="请输入用户名"
-          />
+          <input type="text" id="username" v-model="form.username" required placeholder="请输入用户名" />
         </div>
         <div class="form-group">
           <label for="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            v-model="form.password"
-            required
-            placeholder="请输入密码"
-          />
+          <input type="password" id="password" v-model="form.password" required placeholder="请输入密码" />
         </div>
         <button type="submit" :disabled="loading">
           {{ loading ? "Processing..." : isRegistering ? "注册" : "登录" }}
