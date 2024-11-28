@@ -3,7 +3,8 @@
     <el-container>
       <!-- 标题部分 -->
       <el-header>
-        <el-page-header content="知识点详情" :title="knowledgeDetail?.name || '未命名知识点'" />
+        <el-page-header content="知识点详情" :title="knowledgeDetail?.name || '未命名知识点'">
+        </el-page-header>
       </el-header>
 
       <!-- 内容部分 -->
@@ -53,6 +54,7 @@
           </div>
         </el-card>
       </el-main>
+      <el-button type="primary" @click="goBack" class="btn">返回</el-button>
     </el-container>
   </div>
 </template>
@@ -70,7 +72,6 @@ export default {
     "el-empty": Empty,
     "el-button": Button,
     "el-main": Main,
-
   },
   data() {
     return {
@@ -100,6 +101,10 @@ export default {
         console.error("获取知识点详情时错误:", error);
         this.$message.error("获取知识点详情错误");
       }
+    },
+    // 返回上一页
+    goBack() {
+      this.$router.go(-1); // 返回到上一页
     },
     reloadData() {
       this.fetchKnowledgeDetail();
@@ -134,5 +139,14 @@ export default {
 
 .detail-table td {
   width: 80%;
+}
+
+.btn {
+  position: absolute;
+  bottom: 30%;
+  /* 调整按钮离底部的距离 */
+  left: 50%;
+  transform: translateX(-50%);
+  /* 实现水平居中 */
 }
 </style>

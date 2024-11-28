@@ -18,6 +18,11 @@
                 <div class="panel">
                     <slot></slot>
                 </div>
+                <!-- 回到首页按钮 -->
+                <el-button type="primary" @click="goHome"
+                    style="position: fixed; bottom: 20px; right: 20px; z-index: 10;">
+                    回到首页
+                </el-button>
             </div>
         </div>
     </div>
@@ -31,6 +36,14 @@ export default {
     created() {
         // Do nothing here
     },
+    methods: {
+        goHome() {
+            // 检查当前路径是否已经是主页
+            if (this.$router.currentRoute.path !== '/') {
+                this.$router.push('/');
+            }
+        }
+    }
 };
 </script>
 

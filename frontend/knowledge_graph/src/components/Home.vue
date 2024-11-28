@@ -7,14 +7,8 @@
       <el-main>
         <el-menu :router="true" mode="horizontal">
           <!-- Menu items with icons -->
-          <menu-item :icon="classIcon" v-if="functions['知识点搜索']" title="知识点搜索" route="/knowledge-search"></menu-item>
-          <menu-item :icon="classIcon" v-if="functions['知识点添加']" title="知识点添加" route="/knowledge-adding"></menu-item>
-          <menu-item :icon="classIcon" v-if="functions['知识点修改']" title="知识点修改" route="/knowledge-changing"></menu-item>
-          <menu-item :icon="classIcon" v-if="functions['试卷生成']" title="试卷生成" route="/exam-generation"></menu-item>
-          <menu-item :icon="classIcon" v-if="functions['试卷批改']" title="试卷批改" route="/exam-correction"></menu-item>
-          <menu-item :icon="classIcon" v-if="functions['试卷答题']" title="试卷答题" route="/exam-select"></menu-item>
-          <menu-item :icon="classIcon" v-if="functions['问答']" title="问答" route="/qna"></menu-item>
-          <menu-item :icon="classIcon" v-if="functions['试卷内容']" title="试卷内容" route="/exam-answer"></menu-item>
+          <menu-item :icon="classIcon" title="知识点查看与大模型答疑" route="/knowledge-view-page"></menu-item>
+          <menu-item :icon="classIcon" title="知识点添加与修改" route="/modify-view-page"></menu-item>
         </el-menu>
       </el-main>
     </el-container>
@@ -38,19 +32,7 @@ export default {
   data() {
     return {
       classIcon,
-      // Assuming these are defined based on user permissions or settings
-      functions: {
-        '知识点搜索': true,
-        '知识点详情': true,
-        '知识点添加': true,
-        '知识点修改': true,
-        '试卷生成': true,
-        '试卷批改': true,
-        '试卷答题': true,
-        '问答': true,
-        '试卷内容': true,
-      },
-
+      // Assuming these are defined based on user permissions or setting
     };
   }
 };

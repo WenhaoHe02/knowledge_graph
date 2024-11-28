@@ -11,6 +11,8 @@ import ExamSelect from "../components/ExamSelect.vue";
 import ExamAnswer from "../components/ExamAnswer.vue";
 import KnowledgeAdding from '../components/KnowledgeAdding.vue';
 import KnowledgeChanging from '../components/KnowledgeChanging.vue';
+import KnowledgeViewPage from '../components/KnowledgeViewPage.vue';
+import ModifyViewPage from '@/components/ModifyViewPage.vue';
 Vue.use(Router);
 
 export default new Router({
@@ -25,5 +27,7 @@ export default new Router({
     { name: ' ExamAnswer', path: '/exam-answer', component: ExamAnswer },
     { path: '/knowledge-adding', component: KnowledgeAdding },
     { path: '/knowledge-changing', component: KnowledgeChanging },
-  ],
+    { path: '/knowledge-view-page', component: KnowledgeViewPage },
+    { path: '/modify-view-page', component: ModifyViewPage },
+  ]
 });
