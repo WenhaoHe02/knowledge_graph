@@ -114,9 +114,7 @@ export default {
     async deleteExam(examId) {
       try {
         const baseUrl = "http://localhost:8083";
-        const response = await axios.delete(`${baseUrl}/api/exam/del`, {
-          data: { examId },
-        });
+        const response = await axios.post(`${baseUrl}/api/exam/del`, { examId });
         if (response.data.code === 200) {
           this.$message({
             type: "success",

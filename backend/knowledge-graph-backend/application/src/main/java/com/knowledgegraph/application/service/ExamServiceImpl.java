@@ -25,6 +25,7 @@ public class ExamServiceImpl implements ExamService {
     public JSONObject generateExam(JSONArray knowledgeIds) {
         Set<String> usedQuestionIds = new HashSet<>();
         JSONArray quesListArray = new JSONArray();
+        JSONArray quesIdsArray = new JSONArray(); // 新增 quesIds 数组
 
         // 拼接知识点名称部分
         StringBuilder titleBuilder = new StringBuilder();
@@ -44,15 +45,18 @@ public class ExamServiceImpl implements ExamService {
             List<QuesList> quesList = exerciseRepository.findExercisesByKnowledgePointId(knowledgeId);
 
             for (QuesList ques : quesList) {
-                String questionId = ques.getTitleContent();
+                String questionId = ques.getId(); // 使用习题 ID
                 if (!usedQuestionIds.contains(questionId)) {
                     usedQuestionIds.add(questionId);
 
+                    // 添加到 quesListArray
                     JSONObject quesJson = new JSONObject();
                     quesJson.put("titleContent", ques.getTitleContent());
                     quesJson.put("standardAnswer", ques.getStandardAnswer());
                     quesListArray.put(quesJson);
-                    break;
+
+                    // 添加到 quesIdsArray
+                    quesIdsArray.put(questionId);
                 }
             }
         }
@@ -65,13 +69,14 @@ public class ExamServiceImpl implements ExamService {
         String examTitle = titleBuilder.append(" - ").append(timestamp).toString();
 
         String examId = UUID.randomUUID().toString();
-        writeExamToDatabase(examId, examTitle, quesListArray);
+        writeExamToDatabase(examId, examTitle, quesListArray, quesIdsArray);
 
         JSONObject responseJson = new JSONObject();
         responseJson.put("code", "200");
         responseJson.put("examId", examId);
         responseJson.put("examTitle", examTitle);
         responseJson.put("quesList", quesListArray);
+        responseJson.put("quesIds", quesIdsArray); // 将 quesIds 返回
         responseJson.put("success", "true");
 
         return responseJson;
@@ -122,14 +127,14 @@ public class ExamServiceImpl implements ExamService {
         System.out.println("已删除未保存的试卷节点");
     }
 
-    private void writeExamToDatabase(String examId, String examTitle, JSONArray quesListArray) {
+    private void writeExamToDatabase(String examId, String examTitle, JSONArray quesListArray, JSONArray quesIdsArray) {
         try (Session session = driver.session()) {
-            String quesListString = quesListArray.toString();
-            String query = "CREATE (exam:试卷 {id: $examId, title: $examTitle, quesList: $quesList, flag: $flag})";
+            String query = "CREATE (exam:试卷 {id: $examId, title: $examTitle, quesList: $quesList, quesIds: $quesIds, flag: $flag})";
             session.run(query, org.neo4j.driver.Values.parameters(
                     "examId", examId,
                     "examTitle", examTitle,
-                    "quesList", quesListString,
+                    "quesList", quesListArray.toString(), // 存储为字符串
+                    "quesIds", quesIdsArray.toString(), // 存储为字符串
                     "flag", false
             ));
             System.out.println("试卷已写入数据库: " + examId);
@@ -148,7 +153,7 @@ public class ExamServiceImpl implements ExamService {
 
             // 根据是否传入 examId 构建查询
             if (examId != null && !examId.isEmpty()) {
-                query = "MATCH (exam:试卷 {id: $examId}) RETURN exam.id AS id, exam.title AS title, exam.quesList AS quesList";
+                query = "MATCH (exam:试卷 {id: $examId}) RETURN exam.id AS id, exam.title AS title, exam.quesList AS quesList, exam.quesIds AS quesIds";
                 Result result = session.run(query, org.neo4j.driver.Values.parameters("examId", examId));
 
                 if (result.hasNext()) {
@@ -156,7 +161,7 @@ public class ExamServiceImpl implements ExamService {
                     examsArray.put(buildExamJson(record));
                 }
             } else {
-                query = "MATCH (exam:试卷) RETURN exam.id AS id, exam.title AS title, exam.quesList AS quesList";
+                query = "MATCH (exam:试卷) RETURN exam.id AS id, exam.title AS title, exam.quesList AS quesList, exam.quesIds AS quesIds";
                 Result result = session.run(query);
 
                 while (result.hasNext()) {
@@ -180,7 +185,7 @@ public class ExamServiceImpl implements ExamService {
     private JSONObject buildExamJson(Record record) {
         JSONObject examJson = new JSONObject();
 
-        // 处理 ID 和 Title 属性
+        // 获取试卷 ID 和标题
         String examId = record.get("id").type().name().equals("INTEGER") ?
                 String.valueOf(record.get("id").asInt()) :
                 record.get("id").asString();
@@ -189,8 +194,8 @@ public class ExamServiceImpl implements ExamService {
                 String.valueOf(record.get("title").asInt()) :
                 record.get("title").asString();
 
-        // 处理 quesList 属性
-        JSONArray quesListArray;
+        // 获取 quesList
+        JSONArray quesListArray = new JSONArray();
         try {
             quesListArray = new JSONArray(record.get("quesList").asString());
         } catch (Exception e) {
@@ -198,15 +203,26 @@ public class ExamServiceImpl implements ExamService {
             quesListArray = new JSONArray();
         }
 
-        // 构建 JSON 对象
+        // 获取 quesIds
+        JSONArray quesIdsArray = new JSONArray();
+        try {
+            quesIdsArray = new JSONArray(record.get("quesIds").asString());
+        } catch (Exception e) {
+            // 如果解析失败，返回空数组
+            quesIdsArray = new JSONArray();
+        }
+
+        // 构建响应 JSON
+        examJson.put("code", "200");
         examJson.put("examId", examId);
         examJson.put("examTitle", examTitle);
-        examJson.put("quesList", quesListArray); // 将 JSON 数组直接放入响应
+        examJson.put("quesIds", quesIdsArray);
+        examJson.put("quesList", quesListArray); // 包含题目详细信息
         examJson.put("success", "true");
-        examJson.put("code", "200");
 
         return examJson;
     }
+
 
     @Override
     public boolean submitExam(String examId, JSONArray answers) {
@@ -249,5 +265,30 @@ public class ExamServiceImpl implements ExamService {
             e.printStackTrace();
         }
         return false; // 如果发生异常或未删除任何节点，返回 false
+    }
+
+    @Override
+    public JSONArray getAnswersByExamId(String examId) {
+        JSONArray userAnswersArray = new JSONArray();
+
+        try (Session session = driver.session()) {
+            // Cypher 查询：获取用户作答节点及其答案
+            String query = "MATCH (ua:用户作答)-[:answer_relation]->(exam:试卷 {id: $examId}) " +
+                    "RETURN ua.id AS userAnswerId, ua.answers AS answers";
+            Result result = session.run(query, org.neo4j.driver.Values.parameters("examId", examId));
+
+            // 遍历查询结果，构建用户作答 JSON
+            while (result.hasNext()) {
+                Record record = result.next();
+                JSONObject userAnswerJson = new JSONObject();
+                userAnswerJson.put("id", record.get("userAnswerId").asString());
+                userAnswerJson.put("answers", new JSONArray(record.get("answers").asString()));
+                userAnswersArray.put(userAnswerJson);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return userAnswersArray;
     }
 }

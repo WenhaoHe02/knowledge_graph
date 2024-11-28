@@ -24,10 +24,11 @@
       <!-- Input Section -->
       <el-row class="input-row" type="flex" justify="space-between">
         <el-col :span="22">
-          <el-input v-model="userInput" placeholder="Type your message here..." />
+          <!-- Update: Use @keyup.enter.native to trigger on Enter key -->
+          <el-input v-model="userInput" @keyup.enter.native="sendMessage()" placeholder="Type your message here..."  />
         </el-col>
         <el-col :span="2">
-          <el-button type="primary" @click="sendMessage" class="send-button">Send</el-button>
+          <el-button type="primary" @click="sendMessage"  class="send-button">Send</el-button>
         </el-col>
       </el-row>
     </el-main>
@@ -39,48 +40,43 @@ export default {
   name: 'QnA',
   data() {
     return {
-      userInput: '',
-      messages: [], // Store chat messages
-      messageId: 0, // Unique ID for messages
+      userInput: '',  // User input text
+      messages: [],   // Store chat messages
+      messageId: 0,   // Unique ID for messages
       activeMenu: '1', // Active menu index
     };
   },
   methods: {
     async sendMessage() {
+      console.log('sendMessage triggered');  // Debugging: Check if it's being triggered
       if (this.userInput.trim()) {
-        // Add the user message to the chat
+        // Add user message to chat
         this.messages.push({ id: this.messageId++, sender: '你', text: this.userInput });
         const question = this.userInput;
         this.userInput = ''; // Clear the input field after sending
 
-        // Make the POST request to the backend API
         try {
+          // Send the question to the backend API
           const response = await fetch('http://localhost:8083/api/qa/ask', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'text/plain',
-            },
+            headers: { 'Content-Type': 'text/plain' },
             body: question, // Send the question as plain text
           });
 
           if (response.ok) {
             const data = await response.json();
             const answer = data.answer || 'No answer available.';
-            // Add AI's response
+            // Add AI response to chat
             this.messages.push({ id: this.messageId++, sender: 'AI', text: answer });
           } else {
             this.messages.push({
-              id: this.messageId++,
-              sender: 'AI',
-              text: 'Error: Unable to get a response from the server.',
+              id: this.messageId++, sender: 'AI', text: 'Error: Unable to get a response from the server.',
             });
           }
         } catch (error) {
           console.error('Error:', error);
           this.messages.push({
-            id: this.messageId++,
-            sender: 'AI',
-            text: 'An error occurred while fetching the answer.',
+            id: this.messageId++, sender: 'AI', text: 'An error occurred while fetching the answer.',
           });
         }
       }
@@ -90,6 +86,8 @@ export default {
 </script>
 
 <style scoped>
+/* Styles remain the same */
+
 /* Global reset */
 * {
   margin: 0;
@@ -181,7 +179,7 @@ export default {
 .send-button {
   font-size: 1.3rem;
   padding: 15px 30px;
-  height: 60px;
+  height: 45px;
   border-radius: 8px;
 }
 </style>
