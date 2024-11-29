@@ -10,7 +10,7 @@
 
           <!-- 用户名 -->
           <el-form-item label="用户名" :rules="[{ required: true, message: '请输入用户名', trigger: 'blur' }]">
-            <el-input v-model="form.username" placeholder="请输入用户名"></el-input>
+            <el-input v-model="form.userName" placeholder="请输入用户名"></el-input>
           </el-form-item>
 
           <!-- 密码 -->
@@ -74,7 +74,6 @@ export default {
       try {
         let response;
         if (this.isRegistering) {
-          console.log(this.form);
           // 注册接口，使用 POST 请求
           response = await axios.post(endpoint, JSON.stringify(this.form), {
             headers: { "Content-Type": "application/json" },
@@ -83,7 +82,7 @@ export default {
           // 登录接口，使用 GET 请求，参数通过 URL 传递
           response = await axios.get(endpoint, {
             params: {
-              userName: this.form.username,
+              userName: this.form.userName,
               password: this.form.password,
               role: this.form.role,
             },
@@ -101,7 +100,11 @@ export default {
           throw new Error(data.message || "请求失败");
         }
       } catch (err) {
-        this.error = err.message || "请求发生错误";
+        if (err.response && err.response.status === 409) {
+          this.error = "账号已存在";  // 如果是 409 错误，显示“账号已存在”
+        } else {
+          this.error = err.message || "请求发生错误";
+        }
       } finally {
         this.loading = false;
       }
