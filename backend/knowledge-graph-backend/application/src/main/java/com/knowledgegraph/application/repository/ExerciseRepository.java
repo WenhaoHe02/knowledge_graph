@@ -24,9 +24,9 @@ public class ExerciseRepository {
         List<QuesList> quesLists = new ArrayList<>();
 
         try (Session session = driver.session()) {
-            // 查询习题的 ID、内容和标准答案
+            // 查询习题的 ID、内容、标准答案和类型
             String query = "MATCH (q:习题)-[:exercise_relation]->(kp:知识点 {id: $id}) " +
-                    "RETURN q.id AS exerciseId, q.question AS titleContent, q.answer AS standardAnswer";
+                    "RETURN q.id AS exerciseId, q.question AS titleContent, q.answer AS standardAnswer, q.type AS type";
             Result result = session.run(query, org.neo4j.driver.Values.parameters("id", id));
 
             // 遍历查询结果，构造 QuesList 对象并添加到列表
@@ -41,7 +41,10 @@ public class ExerciseRepository {
                 String titleContent = record.get("titleContent").asString();
                 String standardAnswer = record.get("standardAnswer").asString();
 
-                QuesList ques = new QuesList(exerciseId, titleContent, standardAnswer);
+                // 检查 type 是否为 NULL
+                int type = record.get("type").isNull() ? 1 : record.get("type").asInt();
+
+                QuesList ques = new QuesList(exerciseId, titleContent, standardAnswer, type);
                 quesLists.add(ques);
             }
         } catch (Exception e) {
@@ -51,6 +54,12 @@ public class ExerciseRepository {
         return quesLists;
     }
 
+    /**
+     * 根据知识点 ID 查询知识点名称
+     *
+     * @param knowledgeId 知识点 ID
+     * @return 知识点名称
+     */
     public String findKnowledgePointNameById(String knowledgeId) {
         String knowledgeName = null;
 
