@@ -3,23 +3,36 @@
     <div class="login-container">
       <h2>{{ isRegistering ? "注册" : "登录" }}</h2>
       <form @submit.prevent="handleSubmit">
-        <div class="form-group">
-          <label for="username">Username:</label>
-          <input type="text" id="username" v-model="form.username" required placeholder="请输入用户名" />
-        </div>
-        <div class="form-group">
-          <label for="password">Password:</label>
-          <input type="password" id="password" v-model="form.password" required placeholder="请输入密码" />
-        </div>
-        <button type="submit" :disabled="loading">
-          {{ loading ? "Processing..." : isRegistering ? "注册" : "登录" }}
-        </button>
+        <el-form :model="form" ref="form" label-width="80px">
+          <el-form-item label="角色" :rules="[{ required: true, message: '请输入角色', trigger: 'blur' }]">
+            <el-input v-model="form.role" placeholder="请输入角色 (如 学生)"></el-input>
+          </el-form-item>
+
+          <!-- 用户名 -->
+          <el-form-item label="用户名" :rules="[{ required: true, message: '请输入用户名', trigger: 'blur' }]">
+            <el-input v-model="form.username" placeholder="请输入用户名"></el-input>
+          </el-form-item>
+
+          <!-- 密码 -->
+          <el-form-item label="密码" :rules="[{ required: true, message: '请输入密码', trigger: 'blur' }]">
+            <el-input type="password" v-model="form.password" placeholder="请输入密码"></el-input>
+          </el-form-item>
+
+          <!-- 提交按钮 -->
+          <el-form-item>
+            <el-button type="primary" @click="handleSubmit" :loading="loading" :disabled="loading">
+              {{ loading ? "Processing..." : isRegistering ? "注册" : "登录" }}
+            </el-button>
+          </el-form-item>
+        </el-form>
+
+        <!-- 切换登录和注册模式的文本 -->
         <p class="toggle-text" @click="toggleMode">
-          {{ isRegistering
-            ? "已有账号？点此登录"
-            : "还没有账号？点此注册" }}
+          {{ isRegistering ? "已有账号？点此登录" : "还没有账号？点此注册" }}
         </p>
       </form>
+
+      <!-- 错误信息显示 -->
       <div v-if="error" class="error-message">{{ error }}</div>
     </div>
   </div>
@@ -27,14 +40,22 @@
 
 <script>
 import axios from "axios";
+import { Button, Input, Form, FormItem } from "element-ui";
 
 export default {
   name: "LogIn",
+  components: {
+    "el-button": Button,
+    "el-input": Input,
+    "el-form": Form,
+    "el-form-item": FormItem,
+  },
   data() {
     return {
       form: {
-        username: "",
+        userName: "",
         password: "",
+        role: "", // role 字段，用于注册和登录
       },
       isRegistering: false,
       loading: false,
@@ -51,16 +72,31 @@ export default {
         : "http://localhost:8083/api/role/login";
 
       try {
-        const response = await axios.post(endpoint, this.form, {
-          headers: { "Content-Type": "application/json" },
-        });
+        let response;
+        if (this.isRegistering) {
+          console.log(this.form);
+          // 注册接口，使用 POST 请求
+          response = await axios.post(endpoint, JSON.stringify(this.form), {
+            headers: { "Content-Type": "application/json" },
+          });
+        } else {
+          // 登录接口，使用 GET 请求，参数通过 URL 传递
+          response = await axios.get(endpoint, {
+            params: {
+              userName: this.form.username,
+              password: this.form.password,
+              role: this.form.role,
+            },
+          });
+        }
 
         const data = response.data;
 
-        if (response.status === 200) {
-          this.$store.commit("setUsername", data.username);
+        if (response.status === 200 && data.success) {
           alert(this.isRegistering ? "注册成功!" : "登录成功!");
-          this.$router.push({ name: "Home" }); // 使用 Vue Router 跳转
+          if (!this.isRegistering) {
+            this.$emit('login-success');  // 登录成功后通知父组件关闭弹窗
+          }
         } else {
           throw new Error(data.message || "请求失败");
         }
@@ -79,20 +115,19 @@ export default {
 </script>
 
 <style scoped>
-/* 样式保持不变 */
 .login-page {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #f0f0f0;
+  height: 50vh;
+  background-color: rgba(0, 0, 0, 0);
 }
 
 .login-container {
   background: white;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0);
   width: 100%;
   max-width: 400px;
 }
@@ -102,36 +137,8 @@ h2 {
   margin-bottom: 20px;
 }
 
-.form-group {
+.el-form-item {
   margin-bottom: 15px;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
 }
 
 .error-message {
