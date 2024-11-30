@@ -12,9 +12,9 @@
     <!-- 搜索结果展示 -->
     <div v-if="paginatedResults.length">
       <h4>搜索结果：</h4>
-      <el-table :data="paginatedResults" style="width: 100%">
+      <el-table :data="paginatedResults" style="width: 250%">
         <!-- 知识点名称列 -->
-        <el-table-column prop="name" label="知识点名称" width="200">
+        <el-table-column prop="name" label="知识点名称" width="150">
           <template #default="{ row }">
             <!-- 点击名称后跳转到详情页面 -->
             <el-button @click="goToDetailPage(row.id)" type="text">{{ row.name }}</el-button>
@@ -22,14 +22,14 @@
         </el-table-column>
 
         <!-- 知识点ID列 -->
-        <el-table-column prop="id" label="知识点ID" width="150">
+        <el-table-column prop="id" label="知识点ID" width="100">
           <template #default="{ row }">
             {{ row.id }}
           </template>
         </el-table-column>
 
         <!-- 知识点内容列 -->
-        <el-table-column prop="content" label="内容" width="400">
+        <el-table-column prop="content" label="内容" width="600">
           <template #default="{ row }">
             {{ row.content || '无内容' }}
           </template>
@@ -70,6 +70,7 @@ export default {
     };
   },
   created() {
+    console.log("111", localStorage.getItem('username'));
     this.fetchAllKnowledgePoints();
   },
   computed: {

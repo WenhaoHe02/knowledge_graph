@@ -11,7 +11,7 @@
         </el-menu>
 
         <!-- 登录弹窗 -->
-        <el-dialog :visible.sync="loginDialogVisible" @close="closeLoginModal" width="60%"
+        <el-dialog :visible.sync="notHaveUsername" @close="closeLoginModal" width="60%"
           :before-close="handleBeforeClose" :modal="true" :lock-scroll="true" :center="true" :append-to-body="true">
           <log-in @login-success="closeLoginModal" />
         </el-dialog>
@@ -42,17 +42,21 @@ export default {
   data() {
     return {
       classIcon,
-      loginDialogVisible: true,  // 页面加载时弹窗自动显示
+      notHaveUsername: true,
     };
   },
   mounted() {
-    // 页面加载时自动弹出登录框
-    this.loginDialogVisible = true;
+    if (localStorage.getItem('username') != null) {
+      this.notHaveUsername = false;
+    }
+    // 页面加载时判断是否显示弹窗
+
+    console.log('无用户名:', this.notHaveUsername);
   },
   methods: {
     // 关闭登录弹窗
     closeLoginModal() {
-      this.loginDialogVisible = false;
+      this.haveUsername = false;  // 清空用户名，关闭弹窗
     },
     // 阻止关闭弹窗时点击背景
     handleBeforeClose(done) {

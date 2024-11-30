@@ -8,17 +8,14 @@
             <el-input v-model="form.role" placeholder="请输入角色 (如 学生)"></el-input>
           </el-form-item>
 
-          <!-- 用户名 -->
           <el-form-item label="用户名" :rules="[{ required: true, message: '请输入用户名', trigger: 'blur' }]">
             <el-input v-model="form.userName" placeholder="请输入用户名"></el-input>
           </el-form-item>
 
-          <!-- 密码 -->
           <el-form-item label="密码" :rules="[{ required: true, message: '请输入密码', trigger: 'blur' }]">
             <el-input type="password" v-model="form.password" placeholder="请输入密码"></el-input>
-          </el-form-item>
+          </el-form-item>‘
 
-          <!-- 提交按钮 -->
           <el-form-item>
             <el-button type="primary" @click="handleSubmit" :loading="loading" :disabled="loading">
               {{ loading ? "Processing..." : isRegistering ? "注册" : "登录" }}
@@ -26,13 +23,11 @@
           </el-form-item>
         </el-form>
 
-        <!-- 切换登录和注册模式的文本 -->
         <p class="toggle-text" @click="toggleMode">
           {{ isRegistering ? "已有账号？点此登录" : "还没有账号？点此注册" }}
         </p>
       </form>
 
-      <!-- 错误信息显示 -->
       <div v-if="error" class="error-message">{{ error }}</div>
     </div>
   </div>
@@ -55,12 +50,14 @@ export default {
       form: {
         userName: "",
         password: "",
-        role: "", // role 字段，用于注册和登录
+        role: "",
       },
       isRegistering: false,
       loading: false,
       error: "",
     };
+  },
+  created() {
   },
   methods: {
     async handleSubmit() {
@@ -74,12 +71,10 @@ export default {
       try {
         let response;
         if (this.isRegistering) {
-          // 注册接口，使用 POST 请求
           response = await axios.post(endpoint, JSON.stringify(this.form), {
             headers: { "Content-Type": "application/json" },
           });
         } else {
-          // 登录接口，使用 GET 请求，参数通过 URL 传递
           response = await axios.get(endpoint, {
             params: {
               userName: this.form.userName,
@@ -92,16 +87,18 @@ export default {
         const data = response.data;
 
         if (response.status === 200 && data.success) {
+          localStorage.setItem('username', `${this.form.userName}`);  // 存储用户名
+          console.log(this.$username);
           alert(this.isRegistering ? "注册成功!" : "登录成功!");
           if (!this.isRegistering) {
-            this.$emit('login-success');  // 登录成功后通知父组件关闭弹窗
+            this.$emit('login-success');
           }
         } else {
           throw new Error(data.message || "请求失败");
         }
       } catch (err) {
         if (err.response && err.response.status === 409) {
-          this.error = "账号已存在";  // 如果是 409 错误，显示“账号已存在”
+          this.error = "账号已存在";
         } else {
           this.error = err.message || "请求发生错误";
         }
