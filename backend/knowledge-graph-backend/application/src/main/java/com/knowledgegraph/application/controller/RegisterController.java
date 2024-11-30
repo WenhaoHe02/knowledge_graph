@@ -23,9 +23,19 @@ public class RegisterController {
     static class RegisterHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            // CORS 处理：允许跨域请求
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
 
+            // 处理预检请求 (OPTIONS)
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(200, -1);  // 响应200并不返回内容
+                return;
+            }
+
+            // 处理 POST 请求
             if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 handlePostRequest(exchange);
             } else {
@@ -41,7 +51,7 @@ public class RegisterController {
                 String userName = params.optString("userName", null);
                 String password = params.optString("password", null);
                 String role = params.optString("role", "student"); // 默认为 student
-
+                System.out.println("user: " + userName + " password: " + password + " role: " + role);
                 if (userName == null || password == null) {
                     sendResponse(exchange, 400, false, "Missing required parameters: userName and password.");
                     return;

@@ -27,26 +27,41 @@ public class QAController {
             // 允许跨域访问
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
-            // 只允许 POST 请求
-            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            // 只允许 GET 请求
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
                 try {
-                    // 获取请求体内容
-                    String requestBody = getRequestBody(exchange);
+                    // 获取请求参数
+                    String queryParams = exchange.getRequestURI().getQuery();
+                    if (queryParams == null || queryParams.trim().isEmpty()) {
+                        // 如果请求参数为空，返回 400 错误
+                        sendResponse(exchange, 400, "Bad Request: No question provided.");
+                        return;
+                    }
 
-                    // 如果请求体为空，返回 400 错误
-                    if (requestBody == null || requestBody.trim().isEmpty()) {
+                    // 解析 query 参数（假设请求是类似 ?question=... 的格式）
+                    String question = null;
+                    for (String param : queryParams.split("&")) {
+                        String[] pair = param.split("=");
+                        if (pair.length == 2 && "question".equalsIgnoreCase(pair[0])) {
+                            question = pair[1];
+                            break;
+                        }
+                    }
+
+                    if (question == null || question.trim().isEmpty()) {
+                        // 如果没有找到 question 参数，返回 400 错误
                         sendResponse(exchange, 400, "Bad Request: No question provided.");
                         return;
                     }
 
                     // 调用服务层获取答案
-                    String answer = qaService.getAnswer(requestBody);
+                    String answer = qaService.getAnswer(question);
 
                     // 构建响应 JSON
                     JSONObject responseJson = new JSONObject();
                     responseJson.put("success", true);
                     responseJson.put("code", 200);
-                    responseJson.put("question", requestBody);
+                    responseJson.put("question", question);
                     responseJson.put("answer", answer);
 
                     // 发送响应
@@ -58,8 +73,8 @@ public class QAController {
                     sendResponse(exchange, 500, "Internal Server Error: " + e.getMessage());
                 }
             } else {
-                // 如果不是 POST 请求，返回 405 错误
-                sendResponse(exchange, 405, "Method Not Allowed: Only POST requests are accepted.");
+                // 如果不是 GET 请求，返回 405 错误
+                sendResponse(exchange, 405, "Method Not Allowed: Only GET requests are accepted.");
             }
         }
 

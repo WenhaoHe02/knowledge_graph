@@ -35,11 +35,8 @@ public class RoleController {
 
                     JSONObject params = parseQueryParams(query);
                     String userName = params.optString("userName", null);
-                    userName = userName.substring(1, userName.length() - 1);
                     String password = params.optString("password", null);
-                    password = password.substring(1, password.length() - 1);
                     String role = params.optString("role", null);
-                    role = role.substring(1, role.length() - 1);
                     System.out.println("Received parameters: userName=" + userName + ", password=" + password + ", role=" + role);
 
 
