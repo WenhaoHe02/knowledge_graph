@@ -1,13 +1,6 @@
 <template>
   <div class="exam-select">
-    <!-- 返回按钮 -->
-    <div class="navigation-bar">
-      <el-button type="text" icon="el-icon-arrow-left" @click="goToHome">
-        返回首页
-      </el-button>
-    </div>
-
-    <h3>试卷选择页面</h3>
+    <h3>试卷选择</h3>
 
     <!-- Exam List Table -->
     <el-row class="centered">
@@ -78,12 +71,22 @@ export default {
     async fetchExamList() {
       try {
         const baseUrl = "http://localhost:8083";
-        const response = await axios.get(`${baseUrl}/api/exam/getExam`);
+        const username = localStorage.getItem('username'); // 获取用户名
+        if (!username) {
+          this.$message.error("用户名未找到，请登录");
+          return;
+        }
+
+        const response = await axios.get(`${baseUrl}/api/exam/getExam`, {
+          params: { username }, // 将用户名添加到请求参数
+        });
+
         this.examList = response.data.map(item => ({
           examId: item.examId,
           examTitle: item.examTitle,
         }));
         this.totalRecords = this.examList.length;
+
         this.$message({
           type: "success",
           message: "试卷列表加载成功",

@@ -4,22 +4,13 @@
 
     <!-- 选择试卷 -->
     <el-select v-model="selectedExamId" placeholder="选择试卷" style="width: 300px;" @change="fetchExamAndAnswers">
-      <el-option
-        v-for="exam in examList"
-        :key="exam.examId"
-        :label="exam.examTitle"
-        :value="exam.examId"
-      ></el-option>
+      <el-option v-for="exam in examList" :key="exam.examId" :label="exam.examTitle" :value="exam.examId"></el-option>
     </el-select>
 
     <!-- 用户作答选择 -->
     <el-select v-model="selectedAnswerId" placeholder="选择用户作答" style="width: 300px; margin-top: 20px;">
-      <el-option
-        v-for="answer in userAnswers"
-        :key="answer.id"
-        :label="`用户作答 - ${answer.id}`"
-        :value="answer.id"
-      ></el-option>
+      <el-option v-for="answer in userAnswers" :key="answer.id" :label="`用户作答 - ${answer.id}`"
+        :value="answer.id"></el-option>
     </el-select>
 
     <!-- 批改按钮 -->
@@ -68,7 +59,12 @@ export default {
     // 获取试卷列表
     async fetchExamList() {
       try {
-        const response = await axios.get(`http://localhost:8083/api/exam/getExam`);
+        console.log("加载试卷");
+        const username = localStorage.getItem('username');
+        const response = await axios.get(`http://localhost:8083/api/exam/getExam`, {
+          params: { username },
+        });
+        console.log("加载试卷");
         this.examList = response.data.map(exam => ({
           examId: exam.examId,
           examTitle: exam.examTitle,
@@ -80,13 +76,14 @@ export default {
     // 获取试卷内容和用户作答
     async fetchExamAndAnswers() {
       try {
+        const username = localStorage.getItem('username');
         const examResponse = await axios.get(`http://localhost:8083/api/exam/getExam`, {
-          params: { examId: this.selectedExamId },
+          params: { username, examId: this.selectedExamId },
         });
         this.exam = examResponse.data[0];
 
         const answersResponse = await axios.get(`http://localhost:8083/api/exam/getAnswer`, {
-          params: { examId: this.selectedExamId },
+          params: { username, examId: this.selectedExamId },
         });
         this.userAnswers = answersResponse.data.userAnswers;
       } catch (error) {
@@ -95,19 +92,28 @@ export default {
     },
     // 提交批改并展示结果
     async submitCorrection() {
-      const userAnswer = this.userAnswers.find(answer => answer.id === this.selectedAnswerId);
-      const parsedAnswers = JSON.parse(userAnswer.answers || "[]");
-
-      // 构造请求参数
-      const submitRequest = this.exam.quesList.map((question, index) => ({
-        id: question.id,
-        userAnswer: parsedAnswers[index] || "",
+      const correctionResults = this.exam.quesList.map((_, index) => ({
+        feedback: this.feedbacks[index],
+        score: this.scores[index],
       }));
+      const totalScore = this.scores.reduce((a, b) => a + b, 0);
 
       try {
+        // 从 localStorage 获取 username
+        const username = localStorage.getItem("username");
+        if (!username) {
+          this.$message.error("用户名未找到，请重新登录");
+          return;
+        }
+
         const response = await axios.post(
-          `http://localhost:8083/api/exam/${this.selectedExamId}/grade?userAnsId=${this.selectedAnswerId}`,
-          submitRequest
+          `http://localhost:8083/api/exam/${this.selectedExamId}/submit`,
+          {
+            correctionResults,
+            totalScore,
+            userAnswerId: this.selectedAnswerId,
+            username, // 添加 username 参数
+          }
         );
 
         if (response.data.code === 200) {
@@ -117,12 +123,12 @@ export default {
           this.$message.error("批改失败");
         }
       } catch (error) {
-        this.$message.error("提交批改失败");
+        this.$message.error("提交批改结果失败");
       }
     },
   },
-  async created() {
-    await this.fetchExamList(); // 初始化加载试卷列表
+  created() {
+    this.fetchExamList(); // 初始化加载试卷列表
   },
 };
 </script>

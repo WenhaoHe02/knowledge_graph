@@ -118,43 +118,52 @@ export default {
     async openPreviewDialog() {
       this.previewDialogVisible = true;
       const baseUrl = "http://localhost:8083";
-      // const baseUrl = "http://127.0.0.1:4523/m1/5419934-5094163-default/api/exam/generate";
+
       try {
         const selectedIds = this.tableData
           .filter(item => item.isIncluded.isSelected)
           .map(item => item.id);
-        const response = await axios.post(`${baseUrl}/api/exam/generate`, JSON.stringify(selectedIds),
-          {
-            headers: {
-              'Content-Type': 'application/json; charset=UTF-8'
-            }
+
+        const username = localStorage.getItem('username'); // 从 localStorage 获取用户名
+        if (!username) {
+          this.$message.error("用户名未找到，请登录");
+          return;
+        }
+
+        const payload = {
+          username: username, // 添加 username
+          knowledgeIds: selectedIds,
+        };
+
+        const response = await axios.post(`${baseUrl}/api/exam/generate`, payload, {
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8'
           }
-        );
+        });
 
         if (response.data.success) {
           this.exam = {
             examTitle: response.data.examTitle,
             examId: response.data.examId,
             quesList: response.data.quesList
-          }
+          };
           this.$message({
             type: "success",
-            message: "成功发送数据"
+            message: "试卷生成成功"
           });
           console.log(this.exam);
         } else {
           this.$message({
             type: "warning",
-            message: "发送数据失败"
+            message: "试卷生成失败"
           });
         }
       } catch (error) {
         this.$message({
           type: "error",
-          message: "请求数据出错"
-        })
+          message: "试卷生成出错"
+        });
       }
-
     },
 
     openRecordDialog() {

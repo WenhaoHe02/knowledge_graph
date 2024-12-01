@@ -249,7 +249,7 @@ public class ExamController {
     static class DelExamHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod())) {
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 try (InputStream is = exchange.getRequestBody()) {
                     String requestBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
                     JSONObject requestJson = new JSONObject(requestBody);

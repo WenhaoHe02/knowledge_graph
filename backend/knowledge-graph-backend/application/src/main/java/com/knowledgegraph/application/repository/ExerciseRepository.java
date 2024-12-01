@@ -15,33 +15,40 @@ public class ExerciseRepository {
     private final Driver driver = Neo4jUtil.getDriver();
 
     /**
-     * 根据知识点 ID 查询相关的所有题目
-     *
+     * 查询指定知识点的所有相关题目（默认无数量限制）
      * @param id 知识点 ID
      * @return 题目列表
      */
     public List<QuesList> findExercisesByKnowledgePointId(String id) {
+        return findExercisesByKnowledgePointId(id, Integer.MAX_VALUE); // 无限制
+    }
+
+    /**
+     * 查询指定知识点的随机题目，支持限制返回数量
+     * @param id 知识点 ID
+     * @param limit 返回的题目数量限制
+     * @return 题目列表
+     */
+    public List<QuesList> findExercisesByKnowledgePointId(String id, int limit) {
         List<QuesList> quesLists = new ArrayList<>();
 
         try (Session session = driver.session()) {
-            // 查询习题的 ID、内容、标准答案和类型
+            // 查询习题的 ID、内容、标准答案和类型，随机排序后限制数量
             String query = "MATCH (q:习题)-[:exercise_relation]->(kp:知识点 {id: $id}) " +
-                    "RETURN q.id AS exerciseId, q.question AS titleContent, q.answer AS standardAnswer, q.type AS type";
-            Result result = session.run(query, org.neo4j.driver.Values.parameters("id", id));
+                    "RETURN q.id AS exerciseId, q.question AS titleContent, q.answer AS standardAnswer, q.type AS type " +
+                    "ORDER BY rand() LIMIT $limit";
+            Result result = session.run(query, org.neo4j.driver.Values.parameters("id", id, "limit", limit));
 
             // 遍历查询结果，构造 QuesList 对象并添加到列表
             while (result.hasNext()) {
                 Record record = result.next();
 
-                // 获取 ID 并显式处理 INTEGER 类型的 exerciseId
                 String exerciseId = record.get("exerciseId").type().name().equals("INTEGER") ?
                         String.valueOf(record.get("exerciseId").asInt()) :
                         record.get("exerciseId").asString();
 
                 String titleContent = record.get("titleContent").asString();
                 String standardAnswer = record.get("standardAnswer").asString();
-
-                // 检查 type 是否为 NULL
                 int type = record.get("type").isNull() ? 1 : record.get("type").asInt();
 
                 QuesList ques = new QuesList(exerciseId, titleContent, standardAnswer, type);

@@ -14,6 +14,7 @@ import KnowledgeChanging from '../components/KnowledgeChanging.vue';
 import KnowledgeViewPage from '../components/KnowledgeViewPage.vue';
 import ModifyViewPage from '@/components/ModifyViewPage.vue';
 import Login from '../components/Login.vue';
+import ExamViewPage from '../components/ExamViewPage.vue';
 Vue.use(Router);
 
 export default new Router({
@@ -30,6 +31,7 @@ export default new Router({
     { path: '/knowledge-changing', component: KnowledgeChanging },
     { path: '/knowledge-view-page', component: KnowledgeViewPage },
     { path: '/modify-view-page', component: ModifyViewPage },
-    { path: '/log-in', component: Login }
+    { path: '/log-in', component: Login },
+    { path: '/exam-view-page', component: ExamViewPage}
   ]
 });
