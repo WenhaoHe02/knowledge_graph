@@ -1,5 +1,6 @@
 package com.knowledgegraph.application.controller;
 
+import com.knowledgegraph.application.repository.ConversationRepository;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -34,28 +35,44 @@ public class QAController {
                     String queryParams = exchange.getRequestURI().getQuery();
                     if (queryParams == null || queryParams.trim().isEmpty()) {
                         // 如果请求参数为空，返回 400 错误
+                        sendResponse(exchange, 400, "Bad Request: No parameters provided.");
+                        return;
+                    }
+
+                    String question = null;
+                    String username = null;
+                    for (String param : queryParams.split("&")) {
+                        String[] pair = param.split("=");
+                        if (pair.length == 2) {
+                            if ("question".equalsIgnoreCase(pair[0])) {
+                                question = pair[1];
+                            } else if ("username".equalsIgnoreCase(pair[0])) {
+                                username = pair[1];
+                            }
+                        }
+                    }
+
+                    // 校验参数
+                    if (question == null || question.trim().isEmpty()) {
                         sendResponse(exchange, 400, "Bad Request: No question provided.");
                         return;
                     }
 
-                    // 解析 query 参数（假设请求是类似 ?question=... 的格式）
-                    String question = null;
-                    for (String param : queryParams.split("&")) {
-                        String[] pair = param.split("=");
-                        if (pair.length == 2 && "question".equalsIgnoreCase(pair[0])) {
-                            question = pair[1];
-                            break;
-                        }
-                    }
-
-                    if (question == null || question.trim().isEmpty()) {
-                        // 如果没有找到 question 参数，返回 400 错误
-                        sendResponse(exchange, 400, "Bad Request: No question provided.");
+                    if (username == null || username.trim().isEmpty()) {
+                        sendResponse(exchange, 400, "Bad Request: No username provided.");
                         return;
                     }
 
                     // 调用服务层获取答案
                     String answer = qaService.getAnswer(question);
+
+                    // 创建会话
+                    ConversationRepository conversationRepository = new ConversationRepository();
+                    int conversationId = conversationRepository.getTotalConversationsCount() + 1;
+                    boolean updateSuccess = conversationRepository.createConversation(conversationId, username, question, answer);
+                    if (!updateSuccess) {
+                        System.out.println("Error updating conversation");
+                    }
 
                     // 构建响应 JSON
                     JSONObject responseJson = new JSONObject();
@@ -66,22 +83,10 @@ public class QAController {
 
                     // 发送响应
                     sendResponse(exchange, 200, responseJson.toString());
-
                 } catch (Exception e) {
-                    // 处理异常，返回 500 错误
                     e.printStackTrace();
-                    sendResponse(exchange, 500, "Internal Server Error: " + e.getMessage());
+                    sendResponse(exchange, 500, "Internal Server Error");
                 }
-            } else {
-                // 如果不是 GET 请求，返回 405 错误
-                sendResponse(exchange, 405, "Method Not Allowed: Only GET requests are accepted.");
-            }
-        }
-
-        // 辅助方法：读取请求体
-        private String getRequestBody(HttpExchange exchange) throws IOException {
-            try (InputStream inputStream = exchange.getRequestBody()) {
-                return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             }
         }
 
