@@ -11,15 +11,6 @@
         </div>
       </div>
 
-      <!-- History Section -->
-      <div id="history-output" v-if="history.length > 0" class="history-section">
-        <h3>历史问答</h3>
-        <el-card v-for="(item, index) in history" :key="index" class="history-card">
-          <p><strong>问题:</strong> {{ item.question }}</p>
-          <p><strong>回答:</strong> {{ item.answer }}</p>
-        </el-card>
-      </div>
-
       <!-- View History Button -->
       <div class="view-history-btn-container">
         <el-button type="success" @click="fetchHistory" class="view-history-button">
@@ -42,6 +33,22 @@
         </el-row>
       </div>
     </el-main>
+
+    <!-- History Modal (Dialog) -->
+    <el-dialog title="历史问答" :visible.sync="dialogVisible" width="50%" @close="clearHistory">
+      <div v-if="history.length > 0">
+        <el-card v-for="(item, index) in history" :key="index" class="history-card">
+          <p><strong>问题:</strong> {{ item.question }}</p>
+          <p><strong>回答:</strong> {{ item.answer }}</p>
+        </el-card>
+      </div>
+      <div v-else>
+        <p>没有找到历史记录。</p>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogVisible = false">关闭</el-button>
+      </span>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -57,7 +64,7 @@ export default {
       messages: [],   // Store chat messages
       messageId: 0,   // Unique ID for messages
       history: [],    // Store historical Q&A data
-      activeMenu: '1', // Active menu index
+      dialogVisible: false, // 控制弹窗显示的变量
     };
   },
   methods: {
@@ -71,7 +78,11 @@ export default {
         try {
           // Send the question to the backend API using axios (GET request)
           const response = await axios.get('http://localhost:8083/api/qa/ask', {
-            params: { question }, // Send the question as a query parameter
+            params: {
+              question: question,
+              username: localStorage.getItem('username')
+
+            }, // Send the question as a query parameter
           });
 
           // Handle the response from the server
@@ -105,10 +116,13 @@ export default {
 
         if (response.status === 200 && response.data.success) {
           const historyData = response.data.result;
+          // Ensure we are handling each item correctly based on the data structure
           this.history = historyData.map(item => ({
-            question: item.qa[0].question,  // Assuming the question is in the first QA pair
-            answer: item.qa[0].answer,      // Assuming the answer is in the first QA pair
+            question: item.question,
+            answer: item.anwser,
           }));
+          this.dialogVisible = true;  // 显示弹窗
+          console.log(this.history);
         } else {
           this.history = [];
           this.$message.error('无法获取历史记录');
@@ -117,6 +131,10 @@ export default {
         console.error('Error fetching history:', error);
         this.$message.error('获取历史记录失败');
       }
+    },
+
+    clearHistory() {
+      this.history = []; // 清除历史记录
     }
   },
 };
@@ -165,22 +183,6 @@ export default {
 
 .message-card strong {
   color: #2c3e50;
-}
-
-/* History section styles */
-.history-section {
-  margin-top: 20px;
-}
-
-.history-card {
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-}
-
-.history-card p {
-  margin: 0;
 }
 
 /* View history button styles */
@@ -243,5 +245,21 @@ export default {
 
 .send-button:hover {
   background-color: #1E90FF;
+}
+
+/* Dialog/Modal styles */
+.history-card {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.history-card p {
+  margin: 0;
+}
+
+.dialog-footer {
+  text-align: center;
 }
 </style>

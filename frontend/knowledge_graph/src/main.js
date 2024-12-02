@@ -7,7 +7,6 @@ import router from './router/index';
 
 Vue.use(ElementUI);
 Vue.prototype.$axios = axios;
-Vue.prototype.$username = "";
 Vue.prototype.$isVisable = true;
 
 new Vue({
