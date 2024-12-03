@@ -37,7 +37,7 @@ public class ExamCorrectingSevice {
     }
 
     //private static final Dotenv dotenv = Dotenv.configure().directory("src/main/java/com/knowledgegraph/application/service/.env").load();
-    private static final String API_SECRET_KEY = "15a9c3704e5286fcd58e96de87dbf4d5.stbWHT2a7lvyMds0";//.env文件中
+    private static final String API_SECRET_KEY = "11b0395a1c16c28ac50fd960887e680a.wucr1Z7sxKo6wvM6";//.env文件中
 
     private static String json_example =
             """
@@ -146,6 +146,8 @@ public class ExamCorrectingSevice {
         messages.add(new ChatMessage(ChatMessageRole.USER.value(), __retriever_prompt));
         String res=new String();
 
+
+
         // 函数调用参数构建部分
         List<ChatTool> chatToolList = new ArrayList<>();
         ChatTool chatTool = new ChatTool();
@@ -165,6 +167,7 @@ public class ExamCorrectingSevice {
         StringBuilder responseBuilder = new StringBuilder();
         if (sseModelApiResp.isSuccess()) {
             AtomicBoolean isFirst = new AtomicBoolean(true);
+
             ChatMessageAccumulator chatMessageAccumulator = mapStreamToAccumulator(sseModelApiResp.getFlowable())
                     .doOnNext(accumulator -> {
                         {
@@ -176,10 +179,13 @@ public class ExamCorrectingSevice {
                     })
                     .lastElement()
                     .blockingGet();
+
             res = extractTextBetweenBackticks(responseBuilder.toString());
+
             System.out.println(res);
             return res;
         }
+
 
         return res;
     }
