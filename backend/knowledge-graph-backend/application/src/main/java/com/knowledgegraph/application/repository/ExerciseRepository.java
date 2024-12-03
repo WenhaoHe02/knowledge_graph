@@ -47,7 +47,17 @@ public class ExerciseRepository {
                         String.valueOf(record.get("exerciseId").asInt()) :
                         record.get("exerciseId").asString();
 
-                String titleContent = record.get("titleContent").asString();
+                // 处理返回的 question 字段（可能是列表）
+                Object question = record.get("titleContent").asObject();
+                String titleContent = "";
+
+                if (question instanceof List) {
+                    // 如果是列表，拼接成字符串
+                    titleContent = String.join(" ", (List<String>) question);
+                } else {
+                    titleContent = question.toString();
+                }
+
                 String standardAnswer = record.get("standardAnswer").asString();
                 int type = record.get("type").isNull() ? 1 : record.get("type").asInt();
 
@@ -60,6 +70,8 @@ public class ExerciseRepository {
 
         return quesLists;
     }
+
+
 
     /**
      * 根据知识点 ID 查询知识点名称

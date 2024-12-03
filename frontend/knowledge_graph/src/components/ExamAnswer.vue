@@ -10,24 +10,11 @@
       <el-table-column label="作答">
         <template #default="scope">
           <!-- 简答题 -->
-          <el-input
-            v-if="scope.row.type === 1"
-            v-model="answers[scope.$index]"
-            placeholder="请输入答案"
-          ></el-input>
+          <el-input v-if="scope.row.type === 1" v-model="answers[scope.$index]" placeholder="请输入答案"></el-input>
 
           <!-- 选择题 -->
-          <el-select
-            v-else-if="scope.row.type === 2"
-            v-model="answers[scope.$index]"
-            placeholder="请选择答案"
-          >
-            <el-option
-              v-for="option in getOptions(scope.row.standardAnswer)"
-              :key="option"
-              :label="option"
-              :value="option"
-            ></el-option>
+          <el-select v-else-if="scope.row.type === 2" v-model="answers[scope.$index]" placeholder="请选择答案">
+            <el-option v-for="option in scope.row.options" :key="option" :label="option" :value="option"></el-option>
           </el-select>
 
           <!-- 判断题 -->
@@ -115,8 +102,22 @@ export default {
         console.error("加载试卷失败：", error);
       }
       console.log("quesList 数据：", this.exam.quesList);
+
+      // 处理选择题选项
+      this.exam.quesList.forEach((ques) => {
+        if (ques.type === 2) {
+          // 提取选项
+          const options = this.extractOptions(ques.titleContent);
+          ques.options = options; // 添加选项
+          console.log(options);
+          // 去掉题目中的选项部分
+          ques.titleContent = ques.titleContent.split("[")[0].trim();
+        }
+      });
+
       this.quesList = this.exam.quesList;
     },
+
     // 提交用户作答
     async submitAnswers() {
       try {
@@ -126,15 +127,26 @@ export default {
           return;
         }
 
+        // 对答案进行处理，选择题只发送 A,B,C,D 等字母，不包含选项内容
+        const processedAnswers = this.answers.map(answer => {
+          // 如果是选择题答案 (A. 选项内容)
+          if (answer && answer.match(/^[A-D]\./)) {
+            // 只提取 A、B、C、D 字母部分，去掉句点
+            return answer.split(' ')[0].replace('.', ''); // 获取字母部分并去掉句点
+          }
+          // 对于其他类型的答案 (简答题、判断题)，保持原样
+          return answer;
+        });
+
         const response = await axios.post("http://localhost:8083/api/exam/submit", {
           examId: this.examId,
           username,
-          answers: this.answers,
+          answers: processedAnswers, // 提交处理过的答案
         });
 
         if (response.data.code === 200) {
           this.$message.success("答案提交成功");
-          this.$router.push("/exam-select"); // 提交成功后跳转到试卷选择页面
+          this.$router.push("/exam-view-page"); // 提交成功后跳转到试卷选择页面
         } else {
           this.$message.error("答案提交失败");
         }
@@ -143,11 +155,22 @@ export default {
         this.$message.error("提交答案时出错");
       }
     },
-    // 获取选择题选项
-    getOptions(standardAnswer) {
-      if (!standardAnswer) return [];
-      return standardAnswer.split(";"); // 假设标准答案用分号分隔选项
-    },
+
+
+
+    // 提取选项
+    // 提取选项方法
+    extractOptions(titleContent) {
+      // 修改为匹配[]内内容，并支持空格或逗号分隔的选项
+      const optionsMatch = titleContent.match(/\[(.*?)\]/);
+      if (optionsMatch && optionsMatch[1]) {
+        return optionsMatch[1]
+          .split(/(?<!\w)\s+(?=\w\.)/) // 通过空格和选项开头的 "X." 进行分割
+          .map(option => option.trim());
+      }
+      return [];
+    }
+
   },
   async created() {
     await this.fetchExam(); // 初始化加载试卷内容

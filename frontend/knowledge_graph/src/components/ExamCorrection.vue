@@ -15,7 +15,8 @@
 
     <!-- 批改按钮 -->
     <div style="margin-top: 20px;">
-      <el-button type="primary" @click="submitCorrection" :disabled="!selectedExamId || !selectedAnswerId">
+      <el-button type="primary" @click="submitCorrection" :disabled="!selectedExamId || !selectedAnswerId"
+        :loading="isLoading">
         批改
       </el-button>
     </div>
@@ -53,6 +54,7 @@ export default {
       selectedAnswerId: "", // 当前选择的用户作答 ID
       correctionResult: null, // 批改结果
       exam: null, // 当前试卷内容
+      isLoading: false, // 加载状态
     };
   },
   methods: {
@@ -64,7 +66,6 @@ export default {
         const response = await axios.get(`http://localhost:8083/api/exam/getExam`, {
           params: { username },
         });
-        console.log("加载试卷");
         this.examList = response.data.map(exam => ({
           examId: exam.examId,
           examTitle: exam.examTitle,
@@ -73,59 +74,122 @@ export default {
         this.$message.error("加载试卷列表失败");
       }
     },
-    // 获取试卷内容和用户作答
     async fetchExamAndAnswers() {
       try {
         const username = localStorage.getItem('username');
+        if (!username) {
+          this.$message.error("用户名未找到，请登录");
+          return;
+        }
+
+        // 获取试卷内容
         const examResponse = await axios.get(`http://localhost:8083/api/exam/getExam`, {
           params: { username, examId: this.selectedExamId },
         });
         this.exam = examResponse.data[0];
 
+        // 获取用户作答数据
         const answersResponse = await axios.get(`http://localhost:8083/api/exam/getAnswer`, {
           params: { username, examId: this.selectedExamId },
         });
         this.userAnswers = answersResponse.data.userAnswers;
+
+        // 初始化用户答案数组，确保长度与题目数量一致
+        this.answers = new Array(this.exam.quesList.length).fill(""); // 初始化为指定长度的空数组
+        console.log("试卷数据:", this.exam);
+        console.log("用户答案数据:", this.userAnswers);
       } catch (error) {
         this.$message.error("加载试卷或用户作答失败");
       }
     },
+
     // 提交批改并展示结果
     async submitCorrection() {
-      const correctionResults = this.exam.quesList.map((_, index) => ({
-        feedback: this.feedbacks[index],
-        score: this.scores[index],
-      }));
-      const totalScore = this.scores.reduce((a, b) => a + b, 0);
+      // 设置加载状态
+      this.isLoading = true;
 
       try {
-        // 从 localStorage 获取 username
-        const username = localStorage.getItem("username");
-        if (!username) {
-          this.$message.error("用户名未找到，请重新登录");
+        // 确保试卷和答案数据已经加载
+        if (!this.exam || !Array.isArray(this.exam.quesList)) {
+          this.$message.error("试卷数据加载失败，请稍后再试");
+          this.isLoading = false;
           return;
         }
 
+        // 确保用户答案数据已加载
+        if (!this.userAnswers || !Array.isArray(this.userAnswers)) {
+          this.$message.error("用户作答数据加载失败");
+          this.isLoading = false;
+          return;
+        }
+
+        // 根据 selectedAnswerId 找到对应的用户作答
+        const selectedAnswer = this.userAnswers.find(
+          (answer) => answer.id === this.selectedAnswerId
+        );
+        if (!selectedAnswer || !Array.isArray(selectedAnswer.answers)) {
+          this.$message.error("未找到对应的用户作答");
+          this.isLoading = false;
+          return;
+        }
+
+        // 确保用户答案数量与题目数量一致
+        if (selectedAnswer.answers.length !== this.exam.quesList.length) {
+          this.$message.error("用户答案数量与题目数量不匹配");
+          this.isLoading = false;
+          return;
+        }
+
+        // 构建请求体
+        const answers = this.exam.quesList.map((_, index) => ({
+          id: String(index + 1), // 题目序号从 1 开始
+          userAnswer: selectedAnswer.answers[index] || "", // 用户作答
+        }));
+
+        const username = localStorage.getItem("username");
+        if (!username) {
+          this.$message.error("用户名未找到，请重新登录");
+          this.isLoading = false;
+          return;
+        }
+
+        // 请求批改接口
         const response = await axios.post(
-          `http://localhost:8083/api/exam/${this.selectedExamId}/submit`,
+          `http://localhost:8083/api/exam/${this.selectedExamId}/grade`,
+          answers,
           {
-            correctionResults,
-            totalScore,
-            userAnswerId: this.selectedAnswerId,
-            username, // 添加 username 参数
+            params: { username, userAnsId: this.selectedAnswerId },
+            headers: {
+              "Content-Type": "application/json"
+            },
+            responseType: "json" // 确保返回的是 JSON 格式的响应
           }
         );
 
+
+        // 处理返回结果
         if (response.data.code === 200) {
           this.correctionResult = response.data;
           this.$message.success("批改完成");
+
+          // 在响应中处理批改结果
+          const results = response.data.correctionResults;
+          this.correctionResult.correctionResults = results.map((result, index) => ({
+            score: result.score, // 每道题的得分
+            feedback: result.feedback || "无反馈", // 提供反馈信息
+            title: this.exam.quesList[index].titleContent, // 题目内容
+            userAnswer: selectedAnswer.answers[index], // 用户的答案
+          }));
         } else {
           this.$message.error("批改失败");
         }
       } catch (error) {
         this.$message.error("提交批改结果失败");
+        console.error(error);
+      } finally {
+        this.isLoading = false;
       }
-    },
+    }
   },
   created() {
     this.fetchExamList(); // 初始化加载试卷列表
