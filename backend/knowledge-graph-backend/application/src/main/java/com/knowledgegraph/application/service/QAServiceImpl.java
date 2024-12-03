@@ -15,7 +15,7 @@ public class QAServiceImpl implements QAService {
     private static final String PY_ENVIRONMENT ="local";
     private static final boolean PY_DEBUG = true;
     private static final String LLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
-    private static final String LLM_API_SECRET_KEY = "15a9c3704e5286fcd58e96de87dbf4d5.stbWHT2a7lvyMds0";
+    private static final String LLM_API_SECRET_KEY = "11b0395a1c16c28ac50fd960887e680a.wucr1Z7sxKo6wvM6";
     private static final String MODEL_NAME = "glm-4";
     private static final String ORGANIZATION_NAME ="奶龙大军";
 
