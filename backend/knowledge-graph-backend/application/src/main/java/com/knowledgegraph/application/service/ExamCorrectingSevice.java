@@ -102,7 +102,6 @@ public class ExamCorrectingSevice {
             """+
             "'''\n";
 
-
     private static String getText(Map<String, String> quesList, Map<String, String> answers) throws JsonProcessingException {
         // 创建ObjectMapper实例
         ObjectMapper objectMapper = new ObjectMapper();
@@ -126,10 +125,9 @@ public class ExamCorrectingSevice {
         });
     }
 
-    public static String extractTextBetweenBackticks(String input) {
+    private static String extractTextBetweenBackticks(String input) {
         // 正则表达式匹配三个反引号之间的文本
-        System.out.println(input);
-        Pattern pattern = Pattern.compile("'''(.*?)'''", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("```(.*?)```", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(input);
 
         if (matcher.find()) {
@@ -137,17 +135,8 @@ public class ExamCorrectingSevice {
             String jsonString = matcher.group(1).trim();
             return jsonString.replace("json", "").trim(); // 去掉 "json" 字符串
         }
-        else{
-            pattern = Pattern.compile("```(.*?)```", Pattern.DOTALL);
-            matcher = pattern.matcher(input);
-            if (matcher.find()) {
-                // 提取文本并去掉 "json"
-                String jsonString = matcher.group(1).trim();
-                return jsonString.replace("json", "").trim(); // 去掉 "json" 字符串
-            }
-            else
-                return null;
-        }
+
+        return null; // 如果没有找到，返回null
     }
 
     private static String getResponse(String text) {
@@ -184,18 +173,16 @@ public class ExamCorrectingSevice {
                         {
                             if (accumulator.getDelta() != null && accumulator.getDelta().getContent() != null) {
                                 responseBuilder.append(accumulator.getDelta().getContent());
-                                //System.out.print(accumulator.getDelta().getContent());
+                                System.out.print(accumulator.getDelta().getContent());
                             }
                         }
                     })
                     .lastElement()
                     .blockingGet();
 
-            //System.out.println(responseBuilder.toString());
-
             res = extractTextBetweenBackticks(responseBuilder.toString());
 
-            //System.out.println(res);
+            System.out.println(res);
             return res;
         }
 
@@ -204,9 +191,8 @@ public class ExamCorrectingSevice {
     }
 
     public static GradingResult Correcting(Map<String, String> quesList,Map<String, String> answers) throws JsonProcessingException {
-        //System.out.println(getText(quesList, answers));
+        System.out.println(getText(quesList, answers));
         String res=getResponse(getText(quesList, answers));
-        //System.out.println(res);
         while(res==null)
             res=getResponse(getText(quesList, answers));
         // 创建Gson实例
@@ -214,7 +200,6 @@ public class ExamCorrectingSevice {
 
         // 将JSON字符串转换为Person对象
         GradingResult gradRes = gson.fromJson(res, GradingResult.class);
-
         return gradRes;
     }
 

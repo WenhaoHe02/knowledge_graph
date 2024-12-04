@@ -53,7 +53,7 @@ public class ExamCorrectingHttpController {
             InputStream inputStream = exchange.getRequestBody();
             String requestBody = readInputStream(inputStream);
 
-            System.out.println(requestParams);
+            //System.out.println(answers);
 
             //获取试卷Id或用户答案id
             Pattern pattern = Pattern.compile("/api/exam/([^/]+)/");
@@ -77,8 +77,6 @@ public class ExamCorrectingHttpController {
                 } else if (requestPath.endsWith("/grade")) {
                     examCorrectingReposity.addUserAns(UserAnsId[1],examId,answers);
                     res=examCorrectingController.gradeWithAI(examId,answers);
-                    res.print();
-                    System.out.println("112223");
                     examCorrectingReposity.addCorrectingRes(UserAnsId[1],res,UserAnsId[2]);
                 } else {
                     flag=false;
