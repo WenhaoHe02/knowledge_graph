@@ -63,11 +63,6 @@ export default {
       try {
         console.log("加载试卷");
         const username = localStorage.getItem('username');
-        if (!username) {
-          this.$message.error("用户名未找到，请登录");
-          return;
-        }
-
         const response = await axios.get(`http://localhost:8083/api/exam/getExam`, {
           params: { username },
         });
@@ -77,7 +72,6 @@ export default {
         }));
       } catch (error) {
         this.$message.error("加载试卷列表失败");
-        console.error(error);
       }
     },
     async fetchExamAndAnswers() {
@@ -92,10 +86,6 @@ export default {
         const examResponse = await axios.get(`http://localhost:8083/api/exam/getExam`, {
           params: { username, examId: this.selectedExamId },
         });
-        if (examResponse.data.length === 0) {
-          this.$message.error("未找到指定的试卷");
-          return;
-        }
         this.exam = examResponse.data[0];
 
         // 获取用户作答数据
@@ -110,7 +100,6 @@ export default {
         console.log("用户答案数据:", this.userAnswers);
       } catch (error) {
         this.$message.error("加载试卷或用户作答失败");
-        console.error(error);
       }
     },
 
@@ -152,7 +141,7 @@ export default {
         }
 
         // 构建请求体
-        const answers = this.exam.quesList.map((question, index) => ({
+        const answers = this.exam.quesList.map((_, index) => ({
           id: String(index + 1), // 题目序号从 1 开始
           userAnswer: selectedAnswer.answers[index] || "", // 用户作答
         }));
@@ -164,25 +153,19 @@ export default {
           return;
         }
 
-        // 打印请求体以供调试
-        console.log("提交批改请求体:", JSON.stringify(answers));
-
         // 请求批改接口
-        const config = {
-          method: 'post',
-          url: `http://localhost:8083/api/exam/${this.selectedExamId}/grade`,
-          params: {
-            username: username,
-            userAnsId: this.selectedAnswerId
-          },
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          data: answers
-        };
+        const response = await axios.post(
+          `http://localhost:8083/api/exam/${this.selectedExamId}/grade`,
+          answers,
+          {
+            params: { username, userAnsId: this.selectedAnswerId },
+            headers: {
+              "Content-Type": "application/json"
+            },
+            responseType: "json" // 确保返回的是 JSON 格式的响应
+          }
+        );
 
-        const response = await axios(config);
-        console.log("批改响应:", response.data);
 
         // 处理返回结果
         if (response.data.code === 200) {
@@ -191,15 +174,14 @@ export default {
 
           // 在响应中处理批改结果
           const results = response.data.correctionResults;
-          this.correctionResult.correctionResults = results.map((result) => ({
+          this.correctionResult.correctionResults = results.map((result, index) => ({
             score: result.score, // 每道题的得分
             feedback: result.feedback || "无反馈", // 提供反馈信息
-            // 可以选择是否显示题目内容和用户答案
-            // title: this.exam.quesList[index].titleContent, // 题目内容
-            // userAnswer: selectedAnswer.answers[index], // 用户的答案
+            title: this.exam.quesList[index].titleContent, // 题目内容
+            userAnswer: selectedAnswer.answers[index], // 用户的答案
           }));
         } else {
-          this.$message.error(`批改失败: ${response.data.message || '未知错误'}`);
+          this.$message.error("批改失败");
         }
       } catch (error) {
         this.$message.error("提交批改结果失败");
