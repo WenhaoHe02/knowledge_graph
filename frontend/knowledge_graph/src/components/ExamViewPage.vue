@@ -4,19 +4,19 @@
       <!-- 试卷生成与批改 Tab -->
       <el-tab-pane label="试卷生成与批改" name="paperSystem">
         <el-tabs v-model="activeSubTab" @tab-click="handleSubTabClick">
-          <el-tab-pane label="生成试卷" name="generatePaper" v-if="isTeacher">
+          <el-tab-pane label="生成试卷" name="examGeneration" v-if="isTeacher || isStudent">
             <keep-alive>
-              <generate-paper v-if="activeSubTab === 'generatePaper'" :key="activeSubTab" />
+              <exam-generation v-if="activeSubTab === 'examGeneration'" :key="activeSubTab" />
             </keep-alive>
           </el-tab-pane>
-          <el-tab-pane label="批改试卷" name="gradePaper" v-if="isTeacher">
+          <el-tab-pane label="批改试卷" name="examCorrection" v-if="isTeacher || isStudent">
             <keep-alive>
-              <grade-paper v-if="activeSubTab === 'gradePaper'" :key="activeSubTab" />
+              <exam-correction v-if="activeSubTab === 'examCorrection'" :key="activeSubTab" />
             </keep-alive>
           </el-tab-pane>
-          <el-tab-pane label="答题试卷" name="answerTest" v-if="isStudent || isTeacher">
+          <el-tab-pane label="答题试卷" name="examSelect" v-if="isStudent || isTeacher">
             <keep-alive>
-              <answer-test v-if="activeSubTab === 'answerTest'" :key="activeSubTab" />
+              <exam-select v-if="activeSubTab === 'examSelect'" :key="activeSubTab" />
             </keep-alive>
           </el-tab-pane>
         </el-tabs>
@@ -28,23 +28,23 @@
 <script>
 import Background from "./BackGround.vue";
 import { Tabs, TabPane } from 'element-ui';
-import GeneratePaper from "../components/paperSystem/GeneratePaper.vue";
-import GradePaper from "../components/paperSystem/GradePaper.vue";
-import AnswerTest from "../components/paperSystem/AnswerTest.vue";
+import ExamGeneration from "./ExamGeneration.vue";
+import ExamSelect from "./ExamSelect.vue";
+import ExamCorrection from "./ExamCorrection.vue";
 
 export default {
   components: {
     background: Background,
     'el-tabs': Tabs,
     'el-tab-pane': TabPane,
-    'generate-paper': GeneratePaper,
-    'grade-paper': GradePaper,
-    'answer-test': AnswerTest,
+    'exam-generation': ExamGeneration,
+    'exam-select': ExamSelect,
+    'exam-correction': ExamCorrection,
   },
   data() {
     return {
       activeMainTab: 'paperSystem',
-      activeSubTab: 'generatePaper',
+      activeSubTab: 'examSelect',
       role: null,
     };
   },
@@ -59,7 +59,7 @@ export default {
   methods: {
     handleMainTabClick(tab) {
       this.activeMainTab = tab.name;
-      this.activeSubTab = 'generatePaper';  // 默认选择第一个子tab
+      this.activeSubTab = 'examSelect';  // 默认选择第一个子tab
     },
     handleSubTabClick(tab) {
       this.activeSubTab = tab.name;

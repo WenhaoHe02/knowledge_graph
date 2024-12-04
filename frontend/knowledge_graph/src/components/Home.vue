@@ -8,6 +8,7 @@
         <el-menu :router="true" mode="horizontal">
           <menu-item :icon="classIcon" title="知识点查看与大模型答疑" route="/knowledge-view-page"></menu-item>
           <menu-item :icon="classIcon" title="知识点添加与修改" route="/modify-view-page"></menu-item>
+          <menu-item :icon="classIcon" title="试卷生成与批改" route="/exam-view-page"></menu-item>
         </el-menu>
 
         <!-- 登录弹窗 -->
@@ -24,6 +25,10 @@
 import BackGround from './BackGround.vue';
 import MenuItem from './MenuItem.vue';
 import Login from './Login.vue';
+//import ExamSelect from './ExamSelect.vue';
+//import ExamGeneration from './ExamGeneration.vue';
+//import ExamAnswer from './ExamAnswer.vue';
+//import ExamCorrection from './ExamCorrection.vue';
 import classIcon from "../assets/menu-icon/classIcon.svg";
 import { Container, Header, Main, Menu, Dialog } from 'element-ui';
 

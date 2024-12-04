@@ -26,19 +26,36 @@ public class ExamServiceImpl implements ExamService {
         Set<String> usedQuestionIds = new HashSet<>();
         JSONArray quesListArray = new JSONArray();
         JSONArray quesIdsArray = new JSONArray();
+        System.out.println("知识点 ID: " + knowledgeIds);
 
         // 构建试卷标题
         StringBuilder titleBuilder = new StringBuilder();
-        for (int i = 0; i < knowledgeIds.length(); i++) {
+        int knowledgeCount = knowledgeIds.length();
+        boolean titleComplete = false; // 标志变量，控制标题生成
+        for (int i = 0; i < knowledgeCount; i++) {
             String knowledgeId = knowledgeIds.getString(i);
-            String knowledgeName = exerciseRepository.findKnowledgePointNameById(knowledgeId);
+            System.out.println("开始处理知识点 ID: " + knowledgeId);
 
-            titleBuilder.append(knowledgeName != null ? knowledgeName : knowledgeId);
-            if (i < knowledgeIds.length() - 1) {
-                titleBuilder.append(", ");
+            String knowledgeName = exerciseRepository.findKnowledgePointNameById(knowledgeId);
+            if (!titleComplete) {
+                if (i < 2) { // 前两个知识点直接追加
+                    titleBuilder.append(knowledgeName != null ? knowledgeName : knowledgeId).append(", ");
+                } else if (i == 2) { // 第三个知识点后追加 "等"
+                    titleBuilder.append("等");
+                    titleComplete = true; // 停止追加标题
+                }
             }
 
-            List<QuesList> quesList = exerciseRepository.findExercisesByKnowledgePointId(knowledgeId);
+            // 获取题目列表，每个知识点选取最多5道题目
+            List<QuesList> quesList = exerciseRepository.findExercisesByKnowledgePointId(knowledgeId, 5);
+
+            // 调试输出找到的题目列表
+            System.out.println("知识点 ID: " + knowledgeId + ", 找到的题目数量: " + quesList.size());
+            for (QuesList ques : quesList) {
+                System.out.println("题目 ID: " + ques.getId() + ", 内容: " + ques.getTitleContent() + ", 类型: " + ques.getType());
+            }
+
+            // 将题目添加到试卷中，避免重复
             for (QuesList ques : quesList) {
                 String questionId = ques.getId();
                 if (!usedQuestionIds.contains(questionId)) {
@@ -47,12 +64,17 @@ public class ExamServiceImpl implements ExamService {
                     JSONObject quesJson = new JSONObject();
                     quesJson.put("titleContent", ques.getTitleContent());
                     quesJson.put("standardAnswer", ques.getStandardAnswer());
-                    quesJson.put("type", ques.getType()); // 添加 type 属性
+                    quesJson.put("type", ques.getType());
                     quesListArray.put(quesJson);
 
                     quesIdsArray.put(questionId);
                 }
             }
+        }
+
+        // 去掉标题末尾的逗号和空格
+        if (titleBuilder.length() > 2 && titleBuilder.toString().endsWith(", ")) {
+            titleBuilder.setLength(titleBuilder.length() - 2);
         }
 
         String timestamp = java.time.LocalDateTime.now()
@@ -78,6 +100,11 @@ public class ExamServiceImpl implements ExamService {
         responseJson.put("quesList", quesListArray);
         responseJson.put("quesIds", quesIdsArray);
         responseJson.put("success", "true");
+
+        // 调试输出生成的试卷信息
+        System.out.println("生成的试卷 ID: " + examId);
+        System.out.println("生成的试卷标题: " + examTitle);
+        System.out.println("生成的试卷题目数量: " + quesListArray.length());
 
         return responseJson;
     }

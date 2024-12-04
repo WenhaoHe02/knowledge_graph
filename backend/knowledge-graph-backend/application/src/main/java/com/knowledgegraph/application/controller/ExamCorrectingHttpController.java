@@ -35,17 +35,19 @@ public class ExamCorrectingHttpController {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            // 获取请求方法
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+            exchange.getResponseHeaders().add("Access-Control-Max-Age", "3600");
+
+            // 处理OPTIONS预检请求
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
             String requestMethod = exchange.getRequestMethod();
-            // 获取请求路径
             String requestPath = exchange.getRequestURI().getPath();
-            // 获取请求参数
             String requestParams = exchange.getRequestURI().getQuery();
-            // 构造响应内容
-            String response = "请求方法：" + requestMethod + "\n"
-                    + "请求路径：" + requestPath + "\n"
-                    + "请求参数：" + requestParams;
-            System.out.println(response);
 
             // 获取请求体内容
             InputStream inputStream = exchange.getRequestBody();

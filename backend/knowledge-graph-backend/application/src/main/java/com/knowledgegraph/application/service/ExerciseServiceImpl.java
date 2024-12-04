@@ -10,6 +10,12 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     public List<QuesList> getExercisesByKnowledgePointId(String id) {
+        // 调用无数量限制的版本
         return exerciseRepository.findExercisesByKnowledgePointId(id);
+    }
+
+    public List<QuesList> getExercisesByKnowledgePointId(String id, int limit) {
+        // 调用带数量限制的版本
+        return exerciseRepository.findExercisesByKnowledgePointId(id, limit);
     }
 }
