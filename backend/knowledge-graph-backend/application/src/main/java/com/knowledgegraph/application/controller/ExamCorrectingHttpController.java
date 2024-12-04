@@ -3,8 +3,6 @@ package com.knowledgegraph.application.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.knowledgegraph.application.model.*;
 import com.knowledgegraph.application.repository.ExamCorrectingReposity;
-import com.knowledgegraph.application.service.SearchService;
-import com.knowledgegraph.application.service.SearchServiceImpl;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -29,11 +27,10 @@ public class ExamCorrectingHttpController {
         server.createContext("/api/exam", new ExamCorrectingHandler());
         //server.createContext("/api/exam");
     }
-
     static class ExamCorrectingHandler implements HttpHandler {
-        // 提交试卷答案并批改
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            // 设置CORS头
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
@@ -49,120 +46,99 @@ public class ExamCorrectingHttpController {
             String requestPath = exchange.getRequestURI().getPath();
             String requestParams = exchange.getRequestURI().getQuery();
 
+            // 分割路径
+            String[] parts = requestPath.split("/");
+            if (parts.length < 5) {
+                exchange.sendResponseHeaders(400, -1); // 错误的路径
+                return;
+            }
+
+            String examId = parts[3];
+            String action = parts[4]; // "grade" 或 "submit"
+
+            // 解析查询参数
+            Map<String, String> queryParams = parseQueryParams(requestParams);
+            String userAnsId = queryParams.get("userAnsId");
+            String username = queryParams.get("username");
+
+            if (userAnsId == null || username == null) {
+                exchange.sendResponseHeaders(400, -1); // 缺少参数
+                return;
+            }
+
             // 获取请求体内容
             InputStream inputStream = exchange.getRequestBody();
             String requestBody = readInputStream(inputStream);
 
-            //System.out.println(answers);
+            GradingResult res = new GradingResult();
+            boolean flag = true;
 
-            //获取试卷Id或用户答案id
-            Pattern pattern = Pattern.compile("/api/exam/([^/]+)/");
-            Matcher matcher = pattern.matcher(requestPath);
-            matcher.find();
-            String examId = matcher.group(1);
-            System.out.println(examId);
-            GradingResult res=new GradingResult();
+            try {
+                if ("POST".equalsIgnoreCase(requestMethod)) {
+                    // 将请求体解析为 Map
+                    Map<String, String> answers = parseRequestBody(requestBody);
 
-            boolean flag=true;
-
-            // 处理 POST 请求
-            if ("POST".equalsIgnoreCase(requestMethod)) {
-                // 将请求体解析为 Map
-                Map<String, String> answers = parseRequestBody(requestBody);
-                String[] UserAnsId = requestParams.split("userAnsId=|&username=");
-                if (requestPath.endsWith("/submit")) {
-                    examCorrectingReposity.addUserAns(UserAnsId[1],examId,answers);
-                    res=examCorrectingController.submitExam(examId,answers);
-                    examCorrectingReposity.addCorrectingRes(UserAnsId[1],res,UserAnsId[2]);
-                } else if (requestPath.endsWith("/grade")) {
-                    examCorrectingReposity.addUserAns(UserAnsId[1],examId,answers);
-                    res=examCorrectingController.gradeWithAI(examId,answers);
-                    examCorrectingReposity.addCorrectingRes(UserAnsId[1],res,UserAnsId[2]);
-                } else {
-                    flag=false;
-                    exchange.sendResponseHeaders(400, -1); // 错误的请求
-                }
-
-                if(flag)
-                {
-                    //res.print();
-                    JSONObject responseJson = new JSONObject();
-                    responseJson.put("success", true);
-                    responseJson.put("code", 200);
-                    responseJson.put("totalScore",res.getTotalScore());
-
-                    Map<String, Integer> scores=res.getScores();
-                    Map<String, String> feedbacks=res.getFeedback();
-
-                    JSONArray resultArray = new JSONArray();
-                    for (String name : scores.keySet()) {
-                        Integer score = scores.get(name);
-                        String feedback=feedbacks.get(name);
-                        JSONObject jsonObject = new JSONObject();
-                        jsonObject.put("score", score);
-                        jsonObject.put("feedback", feedback);
-                        resultArray.put(jsonObject);
+                    if ("submit".equalsIgnoreCase(action)) {
+                        examCorrectingReposity.addUserAns(userAnsId, examId, answers);
+                        res = examCorrectingController.submitExam(examId, answers);
+                        examCorrectingReposity.addCorrectingRes(userAnsId, res, username);
+                    } else if ("grade".equalsIgnoreCase(action)) {
+                        examCorrectingReposity.addUserAns(userAnsId, examId, answers);
+                        res = examCorrectingController.gradeWithAI(examId, answers);
+                        examCorrectingReposity.addCorrectingRes(userAnsId, res, username);
+                    } else {
+                        flag = false;
+                        exchange.sendResponseHeaders(400, -1); // 不支持的动作
                     }
-                    responseJson.put("correctionResults", resultArray);
 
-                    String result = responseJson.toString();
+                    if (flag) {
+                        // 构建响应 JSON
+                        JSONObject responseJson = new JSONObject();
+                        responseJson.put("success", true);
+                        responseJson.put("code", 200);
+                        responseJson.put("totalScore", res.getTotalScore());
 
-                    //System.out.println(result);
-                    exchange.getResponseHeaders().add("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, result.getBytes(StandardCharsets.UTF_8).length);
-                    OutputStream os = exchange.getResponseBody();
-                    os.write(result.getBytes(StandardCharsets.UTF_8));
-                    os.close();
-                }
+                        Map<String, Integer> scores = res.getScores();
+                        Map<String, String> feedbacks = res.getFeedback();
 
-            } else if ("GET".equalsIgnoreCase(requestMethod)) {
-                System.out.println(requestBody);
-                res=parseRequestBody2(requestBody);
-                if (requestPath.endsWith("/review")) {
-                    String[] UserAnsId = requestParams.split("username=");
-                    //res=examCorrectingController.reviewExam(examId,gradRes);
-                    examCorrectingReposity.addCorrectingRes(examId,res,UserAnsId[1]);
-                } else {
-                    flag=false;
-                    exchange.sendResponseHeaders(400, -1); // 错误的请求
-                }
+                        JSONArray resultArray = new JSONArray();
+                        for (String key : scores.keySet()) {
+                            Integer score = scores.get(key);
+                            String feedback = feedbacks.get(key);
+                            JSONObject jsonObject = new JSONObject();
+                            jsonObject.put("score", score);
+                            jsonObject.put("feedback", feedback);
+                            resultArray.put(jsonObject);
+                        }
+                        responseJson.put("correctionResults", resultArray);
 
-                if(flag)
-                {
-                    //res.print();
-                    JSONObject responseJson = new JSONObject();
-                    responseJson.put("success", true);
-                    responseJson.put("code", 200);
+                        String result = responseJson.toString();
 
-                    Map<String, String> feedbacks=res.getFeedback();
-
-                    JSONArray resultArray = new JSONArray();
-                    for (String name : feedbacks.keySet()) {
-                        String feedback=feedbacks.get(name);
-                        resultArray.put(feedback);
+                        // 设置响应头和发送响应
+                        exchange.getResponseHeaders().add("Content-Type", "application/json");
+                        exchange.sendResponseHeaders(200, result.getBytes(StandardCharsets.UTF_8).length);
+                        OutputStream os = exchange.getResponseBody();
+                        os.write(result.getBytes(StandardCharsets.UTF_8));
+                        os.close();
                     }
-                    responseJson.put("feedback", resultArray);
-
-                    String result = responseJson.toString();
-                    System.out.println(result);
-
-                    exchange.getResponseHeaders().add("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, result.getBytes(StandardCharsets.UTF_8).length);
-                    OutputStream os = exchange.getResponseBody();
-                    os.write(result.getBytes(StandardCharsets.UTF_8));
-                    os.close();
+                } else if ("GET".equalsIgnoreCase(requestMethod)) {
+                    // 处理GET请求（如 /review）
+                    // 根据您的业务逻辑实现
+                    // 这里暂不详细展开
+                    exchange.sendResponseHeaders(501, -1); // 未实现
+                } else {
+                    exchange.sendResponseHeaders(405, -1); // 不支持的请求方法
                 }
-
-            } else {
-                flag=false;
-                exchange.sendResponseHeaders(405, -1); // 不支持的请求方法
+            } catch (Exception e) {
+                // 处理异常，返回500错误
+                e.printStackTrace();
+                exchange.sendResponseHeaders(500, -1);
             }
-
-
         }
+
         // 读取输入流并转换为字符串
         private String readInputStream(InputStream inputStream) throws IOException {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             StringBuilder body = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -175,7 +151,7 @@ public class ExamCorrectingHttpController {
         private Map<String, String> parseRequestBody(String requestBody) throws IOException {
             ObjectMapper objectMapper = new ObjectMapper();
 
-            // 将 JSON 数组转换为一个 List<Map<String, String>>
+            // 将 JSON数组转换为 List<Map<String, String>>
             List<Map<String, String>> answersList = objectMapper.readValue(requestBody, List.class);
 
             // 创建一个 Map 来存储解析后的结果
@@ -185,33 +161,39 @@ public class ExamCorrectingHttpController {
             for (Map<String, String> answer : answersList) {
                 String id = answer.get("id");
                 String userAnswer = answer.get("userAnswer");
-                answersMap.put(id, userAnswer);
+                if (id != null && userAnswer != null) {
+                    answersMap.put(id, userAnswer);
+                }
             }
 
             return answersMap;
         }
 
-        // 将请求体解析为 GradingRes（假设是 JSON 格式）
+        // 将请求体解析为 GradingResult（假设是 JSON 格式）
         private GradingResult parseRequestBody2(String requestBody) throws IOException {
             ObjectMapper objectMapper = new ObjectMapper();
-            // 将 JSON 数组转换为一个 List<Map<String, String>>
-            Request answersList = objectMapper.readValue(requestBody, Request.class);
-            // 创建一个 GradingResult 来存储解析后的结果
-            GradingResult res =new GradingResult();
-            int i=1;
-            for(CorrectionResult cor:answersList.getCorrectionResults())
-            {
-                System.out.println(cor);
-                res.addScore(String.valueOf(i),cor.getScore());
-                res.addFeedback(String.valueOf(i),cor.getFeedback());
-                ++i;
-            }
-            // 输出结果，确认转换成功
-            //System.out.println("Scores: " + res.getScores());
-            //System.out.println("Feedback: " + res.getFeedback());
-            //System.out.println("Total Score: " + res.getTotalScore());
+            // 将 JSON 转换为 GradingResult 对象
+            // 假设您的 GradingResult 类和 JSON 结构匹配
+            GradingResult res = objectMapper.readValue(requestBody, GradingResult.class);
             return res;
         }
+
+        // 解析查询参数
+        private Map<String, String> parseQueryParams(String query) {
+            Map<String, String> params = new HashMap<>();
+            if (query == null || query.isEmpty()) {
+                return params;
+            }
+            String[] pairs = query.split("&");
+            for (String pair : pairs) {
+                String[] keyValue = pair.split("=");
+                if (keyValue.length == 2) {
+                    params.put(keyValue[0], keyValue[1]);
+                }
+            }
+            return params;
+        }
     }
+
 }
 

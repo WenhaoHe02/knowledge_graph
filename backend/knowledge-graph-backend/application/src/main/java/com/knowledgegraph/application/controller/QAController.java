@@ -1,11 +1,11 @@
 package com.knowledgegraph.application.controller;
 
 import com.knowledgegraph.application.repository.ConversationRepository;
+import com.knowledgegraph.application.service.QAServiceImpl;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.knowledgegraph.application.service.QAService;
-import com.knowledgegraph.application.service.QAServiceImpl;
 import org.json.JSONObject;
 
 import java.io.IOException;
