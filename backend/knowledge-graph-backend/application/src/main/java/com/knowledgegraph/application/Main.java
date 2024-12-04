@@ -30,6 +30,7 @@ public class Main {
             DetailController.registerEndpoints(server);
             ExamCorrectingHttpController.registerEndpoints(server);
             QAController.registerEndpoints(server);
+            QAhistoryController.registerEndpoints(server);
             ExamController.registerEndpoints(server);
             ModifyController.registerEntryPoint(server);
             //ExamController.registerEndpoints(server);
