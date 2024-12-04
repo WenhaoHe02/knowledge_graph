@@ -6,9 +6,9 @@
       </el-header>
       <el-main>
         <el-menu :router="true" mode="horizontal">
-          <menu-item :icon="classIcon" title="知识点查看与大模型答疑" route="/knowledge-view-page"></menu-item>
-          <menu-item :icon="classIcon" title="知识点添加与修改" route="/modify-view-page"></menu-item>
-          <menu-item :icon="classIcon" title="试卷生成与批改" route="/exam-view-page"></menu-item>
+          <menu-item :icon="knowledgeIcon" title="知识点查看与大模型答疑" route="/knowledge-view-page"></menu-item>
+          <menu-item :icon="modifyIcon" title="知识点添加与修改" route="/modify-view-page"></menu-item>
+          <menu-item :icon="examIcon" title="试卷生成与批改" route="/exam-view-page"></menu-item>
         </el-menu>
 
         <!-- 登录弹窗 -->
@@ -29,7 +29,9 @@ import Login from './Login.vue';
 //import ExamGeneration from './ExamGeneration.vue';
 //import ExamAnswer from './ExamAnswer.vue';
 //import ExamCorrection from './ExamCorrection.vue';
-import classIcon from "../assets/menu-icon/classIcon.svg";
+import knowledgeIcon from "../assets/menu-icon/taizhang.svg";
+import examIcon from "../assets/menu-icon/taizhangCheck.svg";
+import modifyIcon from "../assets/menu-icon/reviewIcon.svg";
 import { Container, Header, Main, Menu, Dialog } from 'element-ui';
 
 export default {
@@ -46,7 +48,9 @@ export default {
   },
   data() {
     return {
-      classIcon,
+      knowledgeIcon,
+      modifyIcon,
+      examIcon,
       notHaveUsername: true,
     };
   },

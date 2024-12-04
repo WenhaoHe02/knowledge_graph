@@ -7,29 +7,32 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import okhttp3.*;
+
+import java.io.IOException;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class QAServiceImpl implements QAService {
 
-    // 使用 Dotenv 加载 .env 文件中的配置
-
-
-    private static final String PY_ENVIRONMENT ="local";
-    private static final boolean PY_DEBUG = true;
     private static final String LLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
     private static final String LLM_API_SECRET_KEY = "11b0395a1c16c28ac50fd960887e680a.wucr1Z7sxKo6wvM6";
     private static final String MODEL_NAME = "glm-4";
-    private static final String ORGANIZATION_NAME ="奶龙大军";
 
     // 调用 LLM API，获取 AI 回答
     public static String callLLMApi(String userInput) {
-        OkHttpClient client = new OkHttpClient();
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)  // 设置连接超时
+                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)     // 设置读取超时
+                .build();
 
         // 构建请求体
         JSONObject payload = new JSONObject();
-        payload.put("model", MODEL_NAME); // 检查是否需要修改模型名称
+        payload.put("model", MODEL_NAME);
         JSONArray messages = new JSONArray();
         messages.put(new JSONObject().put("role", "user").put("content", userInput));
         payload.put("messages", messages);
-        payload.put("max_tokens", 500);
+        payload.put("max_tokens", 10000);
 
         // 构建请求
         RequestBody body = RequestBody.create(
@@ -60,16 +63,9 @@ public class QAServiceImpl implements QAService {
         }
     }
 
-
     @Override
     public String getAnswer(String question) {
-        if (PY_DEBUG) {
-            System.out.println("Environment: " + PY_ENVIRONMENT);
-            System.out.println("LLM Base URL: " + LLM_BASE_URL);
-            System.out.println("Model Name: " + MODEL_NAME);
-            System.out.println("Organization Name: " + ORGANIZATION_NAME);
-        }
-
+        System.out.println("Calling LLM API for question: " + question);
         // 调用 LLM API 获取 AI 回答
         String answer = callLLMApi(question);
         return answer;
