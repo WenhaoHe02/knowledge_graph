@@ -4,6 +4,7 @@ import com.knowledgegraph.application.controller.*;
 import com.knowledgegraph.application.model.Exam;
 import com.knowledgegraph.application.model.GradingResult;
 import com.knowledgegraph.application.repository.ExamCorrectingReposity;
+import com.knowledgegraph.application.repository.RelationRepository;
 import com.knowledgegraph.application.util.Neo4jUtil;
 import com.sun.net.httpserver.HttpServer;
 import org.neo4j.driver.Record;
@@ -36,6 +37,7 @@ public class Main {
             //ExamController.registerEndpoints(server);
             RegisterController.registerEndpoints(server);
             RoleController.registerEndpoints(server);
+            RelationExportController.registerEndpoints(server);
             server.setExecutor(null); // 使用默认的线程池
             server.start();
             System.out.println("HTTP 服务器已启动，监听端口 8083");
