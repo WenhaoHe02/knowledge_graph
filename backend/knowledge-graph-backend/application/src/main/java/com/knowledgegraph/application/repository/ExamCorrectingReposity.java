@@ -43,7 +43,6 @@ public class ExamCorrectingReposity {
 
     public void addCorrectingRes(String userAnsId, GradingResult gradRes,String userName)
     {
-        System.out.println("11111");
         String matchQuery="MATCH (n:用户作答 {id: \""+userAnsId+"\"})\n";
         String matchUserQuery="MATCH (m:用户信息 {userName: \""+userName+"\"})\n";
 
@@ -147,4 +146,3 @@ public class ExamCorrectingReposity {
         };
     }
 }
-

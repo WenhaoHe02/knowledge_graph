@@ -1,7 +1,6 @@
 package com.knowledgegraph.application.service;
 
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 import com.zhipu.oapi.ClientV4;
@@ -9,26 +8,16 @@ import com.zhipu.oapi.Constants;
 import com.zhipu.oapi.service.v4.model.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import io.reactivex.Flowable;
-import org.apache.poi.POIXMLDocument;
-import org.apache.poi.POIXMLTextExtractor;
-import org.apache.poi.hwpf.extractor.WordExtractor;
-import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.HashMap;
 
-
-import com.knowledgegraph.application.model.Exam;
 import com.knowledgegraph.application.model.GradingResult;
 
 public class ExamCorrectingSevice {
@@ -37,7 +26,7 @@ public class ExamCorrectingSevice {
     }
 
     //private static final Dotenv dotenv = Dotenv.configure().directory("src/main/java/com/knowledgegraph/application/service/.env").load();
-    private static final String API_SECRET_KEY = "11b0395a1c16c28ac50fd960887e680a.wucr1Z7sxKo6wvM6";//.env文件中
+    private static final String API_SECRET_KEY = "11b0395a1c16c28ac50fd960887e680a.wucr1Z7sxKo6wvM6"; // 请确保安全性，避免硬编码
 
     private static String json_example =
             """
@@ -54,7 +43,7 @@ public class ExamCorrectingSevice {
             }                   
             """;
 
-    private static String quesList=
+    private static String quesList =
             """
             "quesList": [
                 {
@@ -64,7 +53,7 @@ public class ExamCorrectingSevice {
               ]  
             """;
 
-    private static String ansList=
+    private static String ansList =
             """
             [
                 {
@@ -75,43 +64,44 @@ public class ExamCorrectingSevice {
             """;
 
     private static String __retriever_prompt =
-            "You are an AI expert specializing in grading exam questions for software project management."+
-                    "Based on the given questions and reference answers, as well as user provided answers, you will grade and grade the exam questions." +
-                    "The types of questions include single-choice questions, true/false questions, and short answer questions. "+
-                    "The reference answers for single-choice questions are A, B, C, or D, while the reference answers for true or false questions are T or F. "+
-                    "I will provide a list of questions and reference answers in the following format"+quesList+
-                    "user input answers in the following format"+ansList+
-                    "please grade the exam questions based on these and provide the grading results in the following format\n"+
-                    "'''\n"+json_example+"\n'''"+
-                    "\nplease answer in Chinese and provide detailed and comprehensive relationships in your reply.\n"+
-                    "Please provide the correction results in accordance with this format,without any unnecessary comments or text\n"+
-                    "Please use '' and '' '' to identify the correction results in JSON format, for example\n"+
-                    "'''\n"+
-                    """
-                    {
-                      "scores": {
-                        "question1": 10,
-                        "question2": 15
-                      },
-                      "feedback": {
-                        "question1": "Well done!",
-                        "question2": "Needs improvement"
-                      },
-                      "totalScore": 25
-                    }                   
-                    """+
-                    "'''\n";
+            "你现在扮演试卷批改的角色。根据以下提供的问题和参考答案，以及用户的回答，请对试卷进行批改。试题类型包括单项选择题、判断题和简答题。单项选择题的参考答案为 A、B、C 或 D，判断题的参考答案为 T 或 F。\n" +
+                    "我将以以下格式提供问题和参考答案：\n" +
+                    "quesList: [\n" +
+                    "    {\n" +
+                    "      \"titleContent\": \"问题描述\",\n" +
+                    "      \"standardAnswer\": \"参考答案\"\n" +
+                    "    }\n" +
+                    "  ]\n\n" +
+                    "用户的作答以以下格式提供：\n" +
+                    "answers: [\n" +
+                    "    {\n" +
+                    "        \"id\": \"问题编号\",\n" +
+                    "        \"userAnswer\": \"用户回答\"\n" +
+                    "    }\n" +
+                    "]\n\n" +
+                    "请根据以上内容，按照以下 JSON 格式返回批改结果，不要包含任何额外的评论或文本：\n" +
+                    "{\n" +
+                    "  \"scores\": {\n" +
+                    "    \"question1\": 10,\n" +
+                    "    \"question2\": 15\n" +
+                    "  },\n" +
+                    "  \"feedback\": {\n" +
+                    "    \"question1\": \"反馈信息\",\n" +
+                    "    \"question2\": \"反馈信息\"\n" +
+                    "  },\n" +
+                    "  \"totalScore\": 25\n" +
+                    "}\n\n" +
+                    "请用中文回答。";
 
-
-    private static String getText(Map<String, String> quesList, Map<String, String> answers) throws JsonProcessingException {
+    private static String getText(Map<String, String> quesListMap, Map<String, String> answers) throws JsonProcessingException {
         // 创建ObjectMapper实例
         ObjectMapper objectMapper = new ObjectMapper();
 
         // 将对象转换为JSON字符串
-        String jsonQuesString = "List of questions and reference answers：\n"+objectMapper.writeValueAsString(quesList);
-        String jsonAnsString = "The answer entered by the user:\n"+objectMapper.writeValueAsString(answers);
+        String jsonQuesString = "quesList: " + objectMapper.writeValueAsString(quesListMap);
+        String jsonAnsString = "answers: " + objectMapper.writeValueAsString(answers);
 
-        return __retriever_prompt+jsonQuesString+'\n'+jsonAnsString;
+        return __retriever_prompt + "\n" + jsonQuesString + "\n" + jsonAnsString;
     }
 
 
@@ -126,95 +116,70 @@ public class ExamCorrectingSevice {
         });
     }
 
-    public static String extractTextBetweenBackticks(String input) {
-        // 正则表达式匹配三个反引号之间的文本
-        System.out.println(input);
-        Pattern pattern = Pattern.compile("'''(.*?)'''", Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(input);
-
-        if (matcher.find()) {
-            // 提取文本并去掉 "json"
-            String jsonString = matcher.group(1).trim();
-            return jsonString.replace("json", "").trim(); // 去掉 "json" 字符串
+    private static String extractJson(String input) {
+        // 寻找第一个 '{' 和最后一个 '}' 之间的内容
+        int firstBrace = input.indexOf('{');
+        int lastBrace = input.lastIndexOf('}');
+        if (firstBrace != -1 && lastBrace != -1 && lastBrace > firstBrace) {
+            return input.substring(firstBrace, lastBrace + 1);
         }
-        else{
-            pattern = Pattern.compile("```(.*?)```", Pattern.DOTALL);
-            matcher = pattern.matcher(input);
-            if (matcher.find()) {
-                // 提取文本并去掉 "json"
-                String jsonString = matcher.group(1).trim();
-                return jsonString.replace("json", "").trim(); // 去掉 "json" 字符串
-            }
-            else
-                return null;
-        }
+        return null;
     }
 
     private static String getResponse(String text) {
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), "你现在扮演试卷批改的角色，要求根据用户输入和AI的回答，正确提取出信息。"));
         messages.add(new ChatMessage(ChatMessageRole.USER.value(), text));
-        messages.add(new ChatMessage(ChatMessageRole.USER.value(), __retriever_prompt));
-        String res=new String();
 
-
-
-        // 函数调用参数构建部分
-        List<ChatTool> chatToolList = new ArrayList<>();
-        ChatTool chatTool = new ChatTool();
-        chatTool.setType(ChatToolType.FUNCTION.value());
-        ChatFunctionParameters chatFunctionParameters = new ChatFunctionParameters();
-        chatFunctionParameters.setType("object");
+        StringBuilder responseBuilder = new StringBuilder();
 
         ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
                 .model(Constants.ModelChatGLM4)
                 .stream(Boolean.TRUE)
                 .messages(messages)
-                .tools(chatToolList)
+                .tools(new ArrayList<>())
                 .toolChoice("auto")
                 .build();
 
         ModelApiResponse sseModelApiResp = client.invokeModelApi(chatCompletionRequest);
-        StringBuilder responseBuilder = new StringBuilder();
         if (sseModelApiResp.isSuccess()) {
-            AtomicBoolean isFirst = new AtomicBoolean(true);
-
             ChatMessageAccumulator chatMessageAccumulator = mapStreamToAccumulator(sseModelApiResp.getFlowable())
                     .doOnNext(accumulator -> {
-                        {
-                            if (accumulator.getDelta() != null && accumulator.getDelta().getContent() != null) {
-                                responseBuilder.append(accumulator.getDelta().getContent());
-                                //System.out.print(accumulator.getDelta().getContent());
-                            }
+                        if (accumulator.getDelta() != null && accumulator.getDelta().getContent() != null) {
+                            responseBuilder.append(accumulator.getDelta().getContent());
+                            System.out.print(accumulator.getDelta().getContent());
                         }
                     })
                     .lastElement()
                     .blockingGet();
 
-            //System.out.println(responseBuilder.toString());
-
-            res = extractTextBetweenBackticks(responseBuilder.toString());
-
-            //System.out.println(res);
+            String accumulatedResponse = responseBuilder.toString();
+            System.out.println("\nAccumulated response: " + accumulatedResponse);
+            String res = extractJson(accumulatedResponse);
+            System.out.println("Extracted JSON: " + res);
             return res;
         }
-
-
-        return res;
+        return null;
     }
 
-    public static GradingResult Correcting(Map<String, String> quesList,Map<String, String> answers) throws JsonProcessingException {
-        //System.out.println(getText(quesList, answers));
-        String res=getResponse(getText(quesList, answers));
-        //System.out.println(res);
-        while(res==null)
-            res=getResponse(getText(quesList, answers));
+    public static GradingResult Correcting(Map<String, String> quesList, Map<String, String> answers) throws JsonProcessingException {
+        System.out.println("Constructed Prompt:\n" + getText(quesList, answers));
+        String res = getResponse(getText(quesList, answers));
+        int retryCount = 0;
+        int maxRetries = 3;
+        while (res == null && retryCount < maxRetries) {
+            System.out.println("Extraction failed, retrying... Attempt " + (retryCount + 1));
+            res = getResponse(getText(quesList, answers));
+            retryCount++;
+        }
+        if (res == null) {
+            throw new RuntimeException("Failed to extract grading results from AI response.");
+        }
         // 创建Gson实例
         Gson gson = new Gson();
 
-        // 将JSON字符串转换为Person对象
+        // 将JSON字符串转换为GradingResult对象
         GradingResult gradRes = gson.fromJson(res, GradingResult.class);
-
         return gradRes;
     }
 
