@@ -18,6 +18,7 @@ public class DetailRepository {
         return dataReader.executeQuery(query, Values.parameters("id", id), mapToKnowledgePoint()).get(0);
 
     }
+
     private Function<Record, DetailKnowledgePoint> mapToKnowledgePoint() {
         return record -> {
             // 提取基本字段
