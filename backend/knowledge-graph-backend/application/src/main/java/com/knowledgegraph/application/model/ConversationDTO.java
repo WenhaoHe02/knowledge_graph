@@ -6,7 +6,6 @@ public class ConversationDTO {
     private String question;
     private String answer;
 
-    // Getters and Setters
     public int getConversationId() {
         return conversationId;
     }

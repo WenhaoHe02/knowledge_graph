@@ -39,10 +39,8 @@ public class ModifyController {
             if ("PUT".equals(exchange.getRequestMethod())) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 try (InputStream inputStream = exchange.getRequestBody()) {
-                    // 读取请求体
                     String requestBody = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 
-                    // 调用服务层处理请求
                     String result = modifyService.modifyKnowledge(requestBody);
                     System.out.println(result);
 
@@ -54,7 +52,6 @@ public class ModifyController {
 
                     String jsonResponse = objectMapper.writeValueAsString(responseMap);
 
-                    // 返回响应
                     exchange.getResponseHeaders().add("Content-Type", "application/json");
                     byte[] responseBytes = jsonResponse.getBytes(StandardCharsets.UTF_8);
                     exchange.sendResponseHeaders(200, responseBytes.length);
@@ -63,7 +60,6 @@ public class ModifyController {
                         outputStream.write(responseBytes);
                     }
                 }  catch (JsonProcessingException e) {
-                    // 解析失败返回 400 错误
                     String errorResponse = "{\"error\":\"Invalid JSON format\"}";
                     exchange.sendResponseHeaders(400, errorResponse.getBytes(StandardCharsets.UTF_8).length);
                     exchange.getResponseBody().write(errorResponse.getBytes(StandardCharsets.UTF_8));
