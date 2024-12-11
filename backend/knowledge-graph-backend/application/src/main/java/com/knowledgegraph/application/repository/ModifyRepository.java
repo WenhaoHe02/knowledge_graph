@@ -56,7 +56,7 @@ public class ModifyRepository {
     }
     private static String[] convertToArray(Object field) {
         if (field == null) {
-            return new String[]{}; // 返回空数组
+            return new String[]{};
         } else if (field instanceof String) {
             String str = (String) field;
             if (str.contains(",")) {

@@ -16,7 +16,6 @@ public class DetailKnowledgePoint extends KnowledgePoint {
 
     // 构造函数
     public DetailKnowledgePoint() {
-        // 初始化默认值，避免 null 引发的潜在问题
         this.prePoint = new ArrayList<>();
         this.postPoint = new ArrayList<>();
         this.relatedPoint = new ArrayList<>();
@@ -70,9 +69,7 @@ public class DetailKnowledgePoint extends KnowledgePoint {
         this.tag = tag;
     }
 
-    // relatedPoint 的 getter，返回一个不可修改的副本
     public List<String> getRelatedPoint() {
-        // 返回一个副本，避免外部修改原始列表
         return new ArrayList<>(relatedPoint);
     }
 

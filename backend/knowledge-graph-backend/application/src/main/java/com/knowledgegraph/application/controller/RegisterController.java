@@ -35,7 +35,6 @@ public class RegisterController {
                 return;
             }
 
-            // 处理 POST 请求
             if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 handlePostRequest(exchange);
             } else {

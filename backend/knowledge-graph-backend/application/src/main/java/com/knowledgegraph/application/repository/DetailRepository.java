@@ -58,7 +58,6 @@ public class DetailRepository {
                 });
             }
 
-            // 创建并返回 DetailKnowledgePoint 对象
             return new DetailKnowledgePoint(id, name, content, prePoints, postPoints, cognition, tag, relatedPoints, note);
         };
     }
