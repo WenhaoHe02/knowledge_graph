@@ -15,9 +15,9 @@ import org.json.JSONObject;
 
 public class QAServiceImpl implements QAService {
 
-    private static final String LLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
-    private static final String LLM_API_SECRET_KEY = "11b0395a1c16c28ac50fd960887e680a.wucr1Z7sxKo6wvM6";
-    private static final String MODEL_NAME = "glm-4";
+    private static final String LLM_BASE_URL = "https://api.deepseek.com/chat/completions";
+    private static final String LLM_API_SECRET_KEY = "sk-3534578723244677b72ad1a3da2f13bd";
+    private static final String MODEL_NAME = "deepseek-chat";
 
     // 调用 LLM API，获取 AI 回答
     public static String callLLMApi(String userInput) {

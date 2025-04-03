@@ -19,9 +19,9 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        String uri = "bolt://1.94.25.252:7687";
+        String uri = "neo4j://localhost:7687";
         String user = "neo4j";
-        String password = "zstp123456";
+        String password = "neo4j";
         Neo4jUtil.init(uri, user, password);
         System.out.println("Neo4j 数据库连接已初始化");
 
