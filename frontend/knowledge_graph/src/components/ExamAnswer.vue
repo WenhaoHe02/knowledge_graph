@@ -161,14 +161,13 @@ export default {
     // 提取选项
     // 提取选项方法
     extractOptions(titleContent) {
-      // 修改为匹配[]内内容，并支持空格或逗号分隔的选项
+      // 先匹配中括号内的内容
       const optionsMatch = titleContent.match(/\[(.*?)\]/);
-      if (optionsMatch && optionsMatch[1]) {
-        return optionsMatch[1]
-          .split(/(?<!\w)\s+(?=\w\.)/) // 通过空格和选项开头的 "X." 进行分割
-          .map(option => option.trim());
-      }
-      return [];
+      if (!optionsMatch || !optionsMatch[1]) return [];
+
+      // 将中括号内的内容按选项分割
+      const optionsStr = optionsMatch[1].trim();
+      return optionsStr.split(/(?=[A-Z]\.)/).map(option => option.trim()).filter(Boolean);
     }
 
   },
