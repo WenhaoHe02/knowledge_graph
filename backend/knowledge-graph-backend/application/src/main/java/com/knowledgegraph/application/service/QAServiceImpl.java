@@ -32,7 +32,7 @@ public class QAServiceImpl implements QAService {
         JSONArray messages = new JSONArray();
         messages.put(new JSONObject().put("role", "user").put("content", userInput));
         payload.put("messages", messages);
-        payload.put("max_tokens", 10000);
+        payload.put("max_tokens", 1000);
 
         // 构建请求
         RequestBody body = RequestBody.create(
